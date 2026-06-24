@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createMateriel } from "../../services/materielService";
+import toast from "react-hot-toast";
 
 const AjouterMateriel = () => {
   const navigate = useNavigate();
@@ -72,6 +73,7 @@ const AjouterMateriel = () => {
       await createMateriel(data);
 
       setSuccess("Matériel ajouté avec succès.");
+      toast.success("Matériel ajouté avec succès.");
 
       setTimeout(() => {
         navigate("/admin/materiels");
@@ -79,6 +81,10 @@ const AjouterMateriel = () => {
     } catch (err) {
       setError(
         err.response?.data?.message || "Erreur lors de l'ajout du matériel."
+      );
+      toast.error(
+        err.response?.data?.message ||
+          "Erreur lors de l'ajout du matériel."
       );
     } finally {
       setLoading(false);

@@ -4,6 +4,7 @@ import {
   blockUser,
   unblockUser,
 } from "../../services/userService";
+import toast from "react-hot-toast";
 
 const GestionUtilisateurs = () => {
   const [users, setUsers] = useState([]);
@@ -54,6 +55,7 @@ const GestionUtilisateurs = () => {
       setSuccess("");
 
       await blockUser(userId, reason);
+      toast.success("Utilisateur bloqué avec succès.");
 
       setSuccess("Utilisateur bloqué avec succès.");
       setSelectedUserId(null);
@@ -65,6 +67,10 @@ const GestionUtilisateurs = () => {
         err.response?.data?.message ||
           "Erreur lors du blocage de l'utilisateur."
       );
+      toast.error(
+        err.response?.data?.message ||
+            "Erreur lors du blocage de l'utilisateur."
+        );
     } finally {
       setActionLoading(false);
     }
@@ -83,6 +89,7 @@ const GestionUtilisateurs = () => {
       setSuccess("");
 
       await unblockUser(userId);
+      toast.success("Utilisateur débloqué avec succès.");
 
       setSuccess("Utilisateur débloqué avec succès.");
       loadUsers();

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createEmprunt } from "../../services/empruntService";
+import toast from "react-hot-toast";
 
 const CreerEmprunt = () => {
   const { materielId } = useParams();
@@ -45,6 +46,7 @@ const CreerEmprunt = () => {
       });
 
       setSuccess("Emprunt créé avec succès.");
+      toast.success("Emprunt créé avec succès.");
 
       setTimeout(() => {
         navigate("/client/mes-emprunts");
@@ -53,6 +55,10 @@ const CreerEmprunt = () => {
       setError(
         err.response?.data?.message ||
           "Erreur lors de la création de l'emprunt"
+      );
+      toast.error(
+        err.response?.data?.message ||
+          "Erreur lors de la création de l'emprunt."
       );
     } finally {
       setLoading(false);
