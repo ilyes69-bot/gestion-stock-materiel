@@ -130,8 +130,18 @@ const loginUser = async ({ email, password }) => {
     throw error;
   }
 
+  if (user.statut_compte === "bloque") {
+    const reason = user.ban_reason || "Aucune raison précisée";
+
+    const error = new Error(
+      `Votre compte est bloqué. Raison : ${reason}`
+    );
+    error.status = 403;
+    throw error;
+  }
+
   if (user.statut_compte !== "actif") {
-    const error = new Error("Votre compte est désactivé");
+    const error = new Error("Votre compte n'est pas actif");
     error.status = 403;
     throw error;
   }

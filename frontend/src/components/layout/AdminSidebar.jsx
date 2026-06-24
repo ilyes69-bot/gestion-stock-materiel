@@ -31,6 +31,14 @@ const AdminSidebar = () => {
           <li>
             <Link to="/admin/historique">Historique global</Link>
           </li>
+
+          <li>
+            <Link to="/admin/profil">Profil admin</Link>
+          </li>
+
+          <li>
+            <Link to="/admin/utilisateurs">Utilisateurs</Link>
+          </li>
         </ul>
       </nav>
 

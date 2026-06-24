@@ -28,6 +28,9 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
 
 import Home from "../pages/public/Home";
+import ProfilClient from "../pages/client/ProfilClient";
+import ProfilAdmin from "../pages/admin/ProfilAdmin";
+import GestionUtilisateurs from "../pages/admin/GestionUtilisateurs";
 
 const AppRoutes = () => {
   return (
@@ -54,6 +57,7 @@ const AppRoutes = () => {
           <Route path="/client/mes-emprunts" element={<MesEmprunts />} />
           <Route path="/client/notifications" element={<Notifications />} />
           <Route path="/client/historique" element={<HistoriqueClient />} />
+          <Route path="/client/profil" element={<ProfilClient />} />
         </Route>
 
         {/* Routes Admin */}
@@ -70,6 +74,8 @@ const AppRoutes = () => {
           <Route path="/admin/materiels/modifier/:id" element={<ModifierMateriel />} />
           <Route path="/admin/emprunts" element={<GestionEmprunts />} />
           <Route path="/admin/historique" element={<HistoriqueGlobal />} />
+          <Route path="/admin/profil" element={<ProfilAdmin />} />
+          <Route path="/admin/utilisateurs" element={<GestionUtilisateurs />} />
         </Route>
 
         <Route path="/unauthorized" element={<Unauthorized />} />

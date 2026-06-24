@@ -15,6 +15,7 @@ const ClientNavbar = () => {
         <Link to="/client/mes-emprunts">Mes emprunts</Link>
         <Link to="/client/notifications">Notifications</Link>
         <Link to="/client/historique">Historique</Link>
+        <Link to="/client/profil">Profil</Link>
       </div>
 
       <div className="client-navbar-user">

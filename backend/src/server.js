@@ -8,6 +8,7 @@ const materielRoutes = require("./routes/materiel.routes");
 const empruntRoutes = require("./routes/emprunt.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const historiqueRoutes = require("./routes/historique.routes");
+const userRoutes = require("./routes/user.routes");
 const app = express();
 
 app.use(cors());
@@ -26,6 +27,7 @@ app.use("/api/materiels", materielRoutes);
 app.use("/api/emprunts", empruntRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/historique", historiqueRoutes);
+app.use("/api/users", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 

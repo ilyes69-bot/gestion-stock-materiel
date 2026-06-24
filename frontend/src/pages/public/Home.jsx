@@ -3,6 +3,32 @@ import { Link } from "react-router-dom";
 const Home = () => {
   return (
     <div className="home-page">
+      <header className="home-navbar">
+        <Link to="/" className="home-brand">
+          <div className="home-brand-icon">📦</div>
+
+          <div>
+            <strong>StockManager</strong>
+            <span>Gestion intelligente du matériel</span>
+          </div>
+        </Link>
+
+        <nav className="home-nav-links">
+          <a href="#fonctionnalites">Fonctionnalités</a>
+          <a href="#fonctionnement">Fonctionnement</a>
+          <a href="#public">Utilisateurs</a>
+        </nav>
+
+        <div className="home-nav-actions">
+          <Link to="/login" className="home-login-button">
+            Se connecter
+          </Link>
+
+          <Link to="/register" className="home-register-button">
+            Créer un compte
+          </Link>
+        </div>
+      </header>
       <section className="home-hero">
         <div className="home-badge">Plateforme de gestion de matériel</div>
 
@@ -24,7 +50,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="home-features">
+      <section id="fonctionnalites" className="home-features">
         <div className="home-feature-card">
           <div className="home-icon">📦</div>
           <h3>Gestion du stock</h3>
@@ -81,7 +107,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="home-steps">
+      <section id="fonctionnement" className="home-steps">
         <div className="home-section-header">
           <h2>Comment ça marche ?</h2>
           <p>Un fonctionnement simple en trois étapes.</p>
@@ -117,7 +143,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="home-target">
+      <section id="public" className="home-target">
         <div className="home-section-header">
           <h2>Pour qui ?</h2>
           <p>
@@ -147,6 +173,16 @@ const Home = () => {
           </Link>
         </div>
       </section>
+      <footer className="home-footer-simple">
+        <p>
+          © 2026 <span>StockManager</span> — Gestion de stock et prêt de matériel.
+        </p>
+
+        <div>
+          <Link to="/login">Connexion</Link>
+          <Link to="/register">Créer un compte</Link>
+        </div>
+      </footer>
     </div>
   );
 };

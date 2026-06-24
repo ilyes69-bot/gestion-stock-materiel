@@ -57,8 +57,12 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="auth-page">
-      <form className="auth-card" onSubmit={handleSubmit}>
+      <div className="auth-page">
+        <Link to="/" className="auth-home-button">
+          ← Accueil
+        </Link>
+
+        <form className="auth-card" onSubmit={handleSubmit}>  
         <h1>Nouveau mot de passe</h1>
 
         <p className="auth-description">

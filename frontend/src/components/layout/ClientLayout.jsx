@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import ClientNavbar from "./ClientNavbar";
+import ClientChatbot from "../chatbot/ClientChatbot";
 
 const ClientLayout = () => {
   return (
@@ -9,6 +10,8 @@ const ClientLayout = () => {
       <main className="page-container">
         <Outlet />
       </main>
+      
+      <ClientChatbot />
     </div>
   );
 };
