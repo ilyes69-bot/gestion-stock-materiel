@@ -129,7 +129,7 @@ const getAllEmprunts = async () => {
     .from("emprunts")
     .select(`
       *,
-      users (
+      client:users!emprunts_client_id_fkey (
         id,
         nom,
         prenom,

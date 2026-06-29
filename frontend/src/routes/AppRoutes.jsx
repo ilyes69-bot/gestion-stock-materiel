@@ -32,6 +32,11 @@ import ProfilClient from "../pages/client/ProfilClient";
 import ProfilAdmin from "../pages/admin/ProfilAdmin";
 import GestionUtilisateurs from "../pages/admin/GestionUtilisateurs";
 
+import WorkerScan from "../pages/worker/WorkerScan";
+import WorkerScanner from "../pages/worker/WorkerScanner";
+import WorkerLayout from "../components/layout/WorkerLayout";
+import WorkerEmprunts from "../pages/worker/WorkerEmprunts";
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
@@ -80,7 +85,19 @@ const AppRoutes = () => {
 
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        {/* Route Travailleur */}
+        <Route
+            element={
+              <ProtectedRoute allowedRoles={["travailleur"]}>
+                <WorkerLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/worker/scan" element={<WorkerScanner />} />
+            <Route path="/worker/scan/:qrToken" element={<WorkerScan />} />
+            <Route path="/worker/emprunts" element={<WorkerEmprunts />} />
+          </Route>
+        </Routes>
     </BrowserRouter>
   );
 };

@@ -10,6 +10,8 @@ const notificationRoutes = require("./routes/notification.routes");
 const historiqueRoutes = require("./routes/historique.routes");
 const userRoutes = require("./routes/user.routes");
 const app = express();
+const workerRoutes = require("./routes/worker.routes");
+
 
 app.use(cors());
 app.use(express.json());
@@ -28,6 +30,7 @@ app.use("/api/emprunts", empruntRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/historique", historiqueRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/worker", workerRoutes);
 
 const PORT = process.env.PORT || 5000;
 

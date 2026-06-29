@@ -50,10 +50,12 @@ const Login = () => {
       const user = await login(email, password);
 
       if (user.role === "admin") {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/client/catalogue");
-      }
+          navigate("/admin/dashboard");
+        } else if (user.role === "travailleur") {
+          navigate("/worker/scan");
+        } else {
+          navigate("/client/catalogue");
+        }
     } catch (err) {
       setError(
         err.response?.data?.message ||

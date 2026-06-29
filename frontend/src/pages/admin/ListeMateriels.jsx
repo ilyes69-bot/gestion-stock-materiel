@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { deleteMateriel, getMateriels } from "../../services/materielService";
+import { QRCodeCanvas } from "qrcode.react";
 
 const ListeMateriels = () => {
   const [materiels, setMateriels] = useState([]);
@@ -52,6 +53,20 @@ const ListeMateriels = () => {
   const getEtatClass = (etat) => {
     if (etat === "BON_ETAT") return "badge badge-success";
     return "badge badge-danger";
+  };
+  const getQrScanUrl = (qrToken) => {
+  return `${window.location.origin}/worker/scan/${qrToken}`;
+  };
+
+  const copyQrLink = async (qrToken) => {
+    const link = getQrScanUrl(qrToken);
+
+    try {
+      await navigator.clipboard.writeText(link);
+      alert("Lien du QR code copié avec succès.");
+    } catch (error) {
+      alert("Erreur lors de la copie du lien.");
+    }
   };
 
   return (
@@ -117,7 +132,29 @@ const ListeMateriels = () => {
                 </span>
               </div>
             </div>
+              {materiel.qr_token && (
+                <div className="admin-materiel-qr-box">
+                  <p className="admin-materiel-qr-title">QR code du matériel</p>
 
+                  <div className="admin-materiel-qr-image">
+                    <QRCodeCanvas
+                      value={getQrScanUrl(materiel.qr_token)}
+                      size={120}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => copyQrLink(materiel.qr_token)}
+                  >
+                    Copier lien scan
+                  </button>
+                </div>
+              )}
+              
             <div className="inventory-actions">
               <Link
                 className="button-link"
@@ -138,6 +175,7 @@ const ListeMateriels = () => {
       </div>
     </div>
   );
+
 };
 
 export default ListeMateriels;

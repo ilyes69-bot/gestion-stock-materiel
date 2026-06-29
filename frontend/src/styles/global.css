@@ -3881,3 +3881,461 @@ a.secondary-button {
   font-weight: 800;
   color: #ffffff;
 }
+/* =========================
+   ESPACE TRAVAILLEUR - QR SCAN
+   ========================= */
+
+.worker-page {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.worker-header {
+  margin-bottom: 26px;
+}
+
+.worker-header h1 {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.worker-header p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.worker-card {
+  margin-bottom: 22px;
+  padding: 24px;
+  border-radius: 22px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.035)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+}
+
+.worker-card h2 {
+  margin: 0 0 16px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.worker-card p {
+  margin: 8px 0;
+  color: #e5e7eb;
+  line-height: 1.5;
+}
+
+.worker-card strong {
+  color: #ffffff;
+}
+
+.worker-materiel-image {
+  width: 100%;
+  max-width: 360px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 18px;
+  margin-top: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.worker-info-box {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.worker-info-box h3 {
+  margin: 0 0 10px;
+  color: #bfdbfe;
+}
+
+.worker-info-box p {
+  margin: 0;
+  color: #dbeafe;
+}
+
+.worker-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.worker-actions button {
+  min-width: 150px;
+  min-height: 42px;
+}
+
+.worker-muted {
+  margin-top: 14px !important;
+  color: #c7c7c7 !important;
+}
+
+.worker-problem-form {
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.worker-problem-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.worker-problem-form select,
+.worker-problem-form textarea {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.worker-problem-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.worker-problem-box {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.worker-problem-box strong {
+  display: block;
+  color: #fca5a5;
+  margin-bottom: 8px;
+}
+
+.worker-problem-box p {
+  margin: 6px 0;
+  color: #fecaca;
+  line-height: 1.5;
+}
+
+.worker-problem-box span {
+  font-weight: 800;
+  color: #ffffff;
+}
+
+@media (max-width: 700px) {
+  .worker-page {
+    padding: 18px;
+  }
+
+  .worker-header h1 {
+    font-size: 28px;
+  }
+
+  .worker-actions {
+    flex-direction: column;
+  }
+
+  .worker-actions button {
+    width: 100%;
+  }
+}
+/* =========================
+   QR CODE MATERIEL - ADMIN
+   ========================= */
+
+.admin-materiel-qr-box {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+}
+
+.admin-materiel-qr-title {
+  margin: 0 0 12px !important;
+  color: #ffffff !important;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.admin-materiel-qr-image {
+  display: inline-flex;
+  padding: 10px;
+  border-radius: 14px;
+  background: #ffffff;
+  margin-bottom: 12px;
+}
+
+.admin-materiel-qr-box button {
+  margin-top: 8px;
+}
+/* =========================
+   TRAVAILLEUR - PAGE SCANNER
+   ========================= */
+
+.worker-camera-box {
+  width: 100%;
+  max-width: 420px;
+  min-height: 280px;
+  margin-top: 18px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+}
+
+.worker-camera-box video {
+  border-radius: 18px;
+}
+
+.worker-manual-form {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.worker-manual-form input {
+  flex: 1;
+  min-width: 260px;
+}
+
+.worker-manual-form button {
+  min-width: 140px;
+}
+
+@media (max-width: 700px) {
+  .worker-manual-form {
+    flex-direction: column;
+  }
+
+  .worker-manual-form button {
+    width: 100%;
+  }
+}
+/* =========================
+   LAYOUT TRAVAILLEUR
+   ========================= */
+
+.worker-layout {
+  min-height: 100vh;
+  display: flex;
+  background:
+    radial-gradient(circle at top left, rgba(255, 122, 0, 0.16), transparent 35%),
+    #07080c;
+}
+
+.worker-sidebar {
+  width: 250px;
+  min-height: 100vh;
+  padding: 26px 20px;
+  background: rgba(8, 8, 12, 0.96);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.worker-sidebar h2 {
+  margin: 0 0 8px;
+  color: #ff7a00;
+  font-size: 22px;
+}
+
+.worker-sidebar p {
+  margin: 0 0 24px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.worker-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.worker-sidebar nav a {
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: #e5e7eb;
+  text-decoration: none;
+  font-weight: 800;
+  transition: 0.2s ease;
+}
+
+.worker-sidebar nav a:hover,
+.worker-sidebar nav a.active {
+  background: rgba(255, 122, 0, 0.15);
+  color: #ff9f1c;
+}
+
+.worker-logout-button {
+  width: 100%;
+  margin-top: 26px;
+}
+
+.worker-main {
+  flex: 1;
+  padding: 26px;
+  overflow-x: hidden;
+}
+
+.worker-emprunts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 22px;
+}
+
+.worker-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: #ff7a00;
+  color: #000000;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.worker-link-button:hover {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 800px) {
+  .worker-layout {
+    flex-direction: column;
+  }
+
+  .worker-sidebar {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .worker-main {
+    padding: 18px;
+  }
+}
+/* =========================
+   LAYOUT TRAVAILLEUR
+   ========================= */
+
+.worker-layout {
+  min-height: 100vh;
+  display: flex;
+  background:
+    radial-gradient(circle at top left, rgba(255, 122, 0, 0.16), transparent 35%),
+    #07080c;
+}
+
+.worker-sidebar {
+  width: 250px;
+  min-width: 250px;
+  min-height: 100vh;
+  padding: 24px 18px;
+  background: rgba(7, 8, 12, 0.98);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.worker-sidebar-header {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.worker-sidebar-header h2 {
+  margin: 0 0 8px;
+  color: #ff7a00;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.worker-sidebar-header p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.worker-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.worker-sidebar-nav a {
+  display: block;
+  padding: 13px 14px;
+  border-radius: 14px;
+
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 900;
+  font-size: 14px;
+
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: 0.2s ease;
+}
+
+.worker-sidebar-nav a:hover,
+.worker-sidebar-nav a.active {
+  background: rgba(255, 122, 0, 0.18);
+  color: #ff9f1c;
+  border-color: rgba(255, 122, 0, 0.35);
+}
+
+.worker-logout-button {
+  width: 100%;
+  margin-top: 26px;
+  min-height: 44px;
+  border-radius: 14px;
+  background: #ff7a00;
+  color: #000000;
+  font-weight: 900;
+  border: none;
+  cursor: pointer;
+}
+
+.worker-main {
+  flex: 1;
+  padding: 30px;
+  overflow-x: hidden;
+}
+
+@media (max-width: 800px) {
+  .worker-layout {
+    flex-direction: column;
+  }
+
+  .worker-sidebar {
+    width: 100%;
+    min-width: 100%;
+    min-height: auto;
+  }
+
+  .worker-main {
+    padding: 18px;
+  }
+}
