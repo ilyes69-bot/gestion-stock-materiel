@@ -271,43 +271,60 @@ const WorkerScan = () => {
             </div>
           )}
 
-          {emprunt.statut === "EN_COURS" && (
-            <div className="worker-actions">
-              {!emprunt.sortie_confirmee && (
-                <button
-                  onClick={handleConfirmSortie}
-                  disabled={actionLoading}
-                >
-                  {actionLoading ? "Validation..." : "Confirmer sortie"}
-                </button>
-              )}
+          {emprunt.statut === "EN_ATTENTE_VALIDATION" && (
+                <p className="worker-muted">
+                    Cette demande attend encore la validation de l’administrateur.
+                </p>
+                )}
 
-              {emprunt.sortie_confirmee && (
-                <>
-                  <button
+                {emprunt.statut === "VALIDE" && (
+                <div className="worker-actions">
+                    <button
+                    onClick={handleConfirmSortie}
+                    disabled={actionLoading}
+                    >
+                    {actionLoading ? "Validation..." : "Confirmer sortie"}
+                    </button>
+                </div>
+                )}
+
+                {emprunt.statut === "EN_COURS" && (
+                <div className="worker-actions">
+                    <button
                     onClick={handleRetourNormal}
                     disabled={actionLoading}
-                  >
+                    >
                     Retour normal
-                  </button>
+                    </button>
 
-                  <button
+                    <button
                     className="delete-button"
                     onClick={() => setShowProblemForm(true)}
                     disabled={actionLoading}
-                  >
+                    >
                     Retour avec problème
-                  </button>
-                </>
-              )}
-            </div>
-          )}
+                    </button>
+                </div>
+                )}
 
-          {emprunt.statut === "RETOURNE" && (
-            <p className="worker-muted">
-              Cet emprunt est déjà clôturé.
-            </p>
-          )}
+                {emprunt.statut === "EN_ATTENTE_CONFIRMATION_RETOUR" && (
+                <p className="worker-muted">
+                    Le retour a été déclaré. En attente de confirmation finale par
+                    l’administrateur.
+                </p>
+                )}
+
+                {emprunt.statut === "RETOURNE" && (
+                <p className="worker-muted">
+                    Cet emprunt est déjà clôturé.
+                </p>
+                )}
+
+                {emprunt.statut === "REFUSE" && (
+                <p className="worker-muted">
+                    Cette demande d’emprunt a été refusée.
+                </p>
+                )}
 
           {showProblemForm && (
             <div className="worker-problem-form">

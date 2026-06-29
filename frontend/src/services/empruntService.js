@@ -15,6 +15,30 @@ export const getAllEmprunts = async () => {
   return response.data.emprunts || [];
 };
 
+export const validerDemandeEmprunt = async (id) => {
+  const response = await api.put(`/emprunts/${id}/valider-demande`);
+  return response.data.emprunt;
+};
+
+export const refuserDemandeEmprunt = async (id) => {
+  const response = await api.put(`/emprunts/${id}/refuser-demande`);
+  return response.data.emprunt;
+};
+
+export const confirmerRetourNormalFinal = async (id) => {
+  const response = await api.put(`/emprunts/${id}/confirmer-retour-normal`);
+  return response.data.emprunt;
+};
+
+export const confirmerRetourEndommageFinal = async (id, data) => {
+  const response = await api.put(
+    `/emprunts/${id}/confirmer-retour-endommage`,
+    data
+  );
+  return response.data.emprunt;
+};
+
+// Anciennes fonctions gardées pour éviter de casser d'autres imports
 export const validateReturn = async (id) => {
   const response = await api.put(`/emprunts/${id}/retour-valide`);
   return response.data.emprunt;
@@ -25,6 +49,5 @@ export const markAsDamaged = async (id, data) => {
   return response.data.emprunt;
 };
 
-// Alias pour éviter de casser les anciens imports
 export const validerRetour = validateReturn;
 export const signalerEndommage = markAsDamaged;

@@ -51,7 +51,12 @@ const getMaterielByQrToken = async (qrToken) => {
       )
     `)
     .eq("materiel_id", materiel.id)
-    .eq("statut", "EN_COURS")
+    .in("statut", [
+    "EN_ATTENTE_VALIDATION",
+    "VALIDE",
+    "EN_COURS",
+    "EN_ATTENTE_CONFIRMATION_RETOUR",
+    ])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -78,7 +83,7 @@ const confirmerSortie = async (empruntId, workerId) => {
         nom,
         prenom,
         email
-        ),
+      ),
       materiels (
         id,
         nom,
@@ -95,8 +100,10 @@ const confirmerSortie = async (empruntId, workerId) => {
     throw error;
   }
 
-  if (emprunt.statut !== "EN_COURS") {
-    const error = new Error("Cet emprunt n'est pas en cours");
+  if (emprunt.statut !== "VALIDE") {
+    const error = new Error(
+      "La sortie peut être confirmée seulement après validation par l'administrateur"
+    );
     error.status = 400;
     throw error;
   }
@@ -110,6 +117,7 @@ const confirmerSortie = async (empruntId, workerId) => {
   const { data: updatedEmprunt, error: updateError } = await supabase
     .from("emprunts")
     .update({
+      statut: "EN_COURS",
       sortie_confirmee: true,
       date_sortie_effective: nowDateTime(),
       sortie_par: workerId,
@@ -125,6 +133,14 @@ const confirmerSortie = async (empruntId, workerId) => {
     throw error;
   }
 
+  await supabase
+    .from("materiels")
+    .update({
+      statut: "EMPRUNTE",
+      updated_at: nowDateTime(),
+    })
+    .eq("id", emprunt.materiel_id);
+
   await supabase.from("notifications").insert({
     user_id: emprunt.client_id,
     contenu: `La sortie du matériel ${emprunt.materiels?.nom || ""} a été confirmée.`,
@@ -137,7 +153,7 @@ const confirmerSortie = async (empruntId, workerId) => {
     materiel_id: emprunt.materiel_id,
     emprunt_id: emprunt.id,
     type_action: "CONFIRMATION_SORTIE",
-    description: `Sortie confirmée pour le matériel ${emprunt.materiels?.nom || ""}.`,
+    description: `Sortie confirmée par le travailleur pour le matériel ${emprunt.materiels?.nom || ""}.`,
   });
 
   return updatedEmprunt;
@@ -153,7 +169,7 @@ const validerRetourNormal = async (empruntId, workerId) => {
         nom,
         prenom,
         email
-        ),
+      ),
       materiels (
         id,
         nom
@@ -168,8 +184,14 @@ const validerRetourNormal = async (empruntId, workerId) => {
     throw error;
   }
 
-  if (emprunt.statut === "RETOURNE") {
-    const error = new Error("Cet emprunt est déjà retourné");
+  if (emprunt.statut !== "EN_COURS") {
+    const error = new Error("Le retour peut être déclaré seulement pour un emprunt en cours");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!emprunt.sortie_confirmee) {
+    const error = new Error("La sortie doit être confirmée avant de déclarer le retour");
     error.status = 400;
     throw error;
   }
@@ -177,7 +199,7 @@ const validerRetourNormal = async (empruntId, workerId) => {
   const { data: updatedEmprunt, error: updateError } = await supabase
     .from("emprunts")
     .update({
-      statut: "RETOURNE",
+      statut: "EN_ATTENTE_CONFIRMATION_RETOUR",
       date_retour_effective: todayDate(),
       retour_par: workerId,
       probleme_retour: false,
@@ -190,7 +212,7 @@ const validerRetourNormal = async (empruntId, workerId) => {
     .single();
 
   if (updateError) {
-    const error = new Error("Erreur lors de la validation du retour");
+    const error = new Error("Erreur lors de la déclaration du retour");
     error.status = 500;
     throw error;
   }
@@ -198,7 +220,7 @@ const validerRetourNormal = async (empruntId, workerId) => {
   await supabase
     .from("materiels")
     .update({
-      statut: "DISPONIBLE",
+      statut: "INDISPONIBLE",
       etat: "BON_ETAT",
       updated_at: nowDateTime(),
     })
@@ -206,8 +228,8 @@ const validerRetourNormal = async (empruntId, workerId) => {
 
   await supabase.from("notifications").insert({
     user_id: emprunt.client_id,
-    contenu: `Le retour du matériel ${emprunt.materiels?.nom || ""} a été validé en bon état.`,
-    type: "RETOUR_NORMAL",
+    contenu: `Le retour du matériel ${emprunt.materiels?.nom || ""} a été déclaré en bon état. Il attend la confirmation de l'administrateur.`,
+    type: "RETOUR_DECLARE",
     lu: false,
   });
 
@@ -215,8 +237,8 @@ const validerRetourNormal = async (empruntId, workerId) => {
     user_id: workerId,
     materiel_id: emprunt.materiel_id,
     emprunt_id: emprunt.id,
-    type_action: "RETOUR_NORMAL_SCAN",
-    description: `Retour normal validé après scan pour le matériel ${emprunt.materiels?.nom || ""}.`,
+    type_action: "DECLARATION_RETOUR_NORMAL",
+    description: `Retour normal déclaré par le travailleur pour le matériel ${emprunt.materiels?.nom || ""}.`,
   });
 
   return updatedEmprunt;
@@ -236,11 +258,11 @@ const validerRetourProbleme = async (empruntId, data, workerId) => {
     .select(`
       *,
       client:users!emprunts_client_id_fkey (
-    id,
-    nom,
-    prenom,
-    email
-    ),
+        id,
+        nom,
+        prenom,
+        email
+      ),
       materiels (
         id,
         nom
@@ -255,8 +277,14 @@ const validerRetourProbleme = async (empruntId, data, workerId) => {
     throw error;
   }
 
-  if (emprunt.statut === "RETOURNE") {
-    const error = new Error("Cet emprunt est déjà retourné");
+  if (emprunt.statut !== "EN_COURS") {
+    const error = new Error("Le retour peut être déclaré seulement pour un emprunt en cours");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!emprunt.sortie_confirmee) {
+    const error = new Error("La sortie doit être confirmée avant de déclarer le retour");
     error.status = 400;
     throw error;
   }
@@ -266,7 +294,7 @@ const validerRetourProbleme = async (empruntId, data, workerId) => {
   const { data: updatedEmprunt, error: updateError } = await supabase
     .from("emprunts")
     .update({
-      statut: "RETOURNE",
+      statut: "EN_ATTENTE_CONFIRMATION_RETOUR",
       date_retour_effective: todayDate(),
       retour_par: workerId,
       probleme_retour: true,
@@ -279,7 +307,7 @@ const validerRetourProbleme = async (empruntId, data, workerId) => {
     .single();
 
   if (updateError) {
-    const error = new Error("Erreur lors du signalement du problème");
+    const error = new Error("Erreur lors de la déclaration du problème");
     error.status = 500;
     throw error;
   }
@@ -295,8 +323,8 @@ const validerRetourProbleme = async (empruntId, data, workerId) => {
 
   await supabase.from("notifications").insert({
     user_id: emprunt.client_id,
-    contenu: `Le matériel ${emprunt.materiels?.nom || ""} a été retourné avec un problème. Commentaire : ${commentaire_retour.trim()}`,
-    type: "RETOUR_AVEC_PROBLEME",
+    contenu: `Le retour du matériel ${emprunt.materiels?.nom || ""} a été déclaré avec un problème. Commentaire : ${commentaire_retour.trim()}`,
+    type: "RETOUR_PROBLEME_DECLARE",
     lu: false,
   });
 
@@ -304,8 +332,8 @@ const validerRetourProbleme = async (empruntId, data, workerId) => {
     user_id: workerId,
     materiel_id: emprunt.materiel_id,
     emprunt_id: emprunt.id,
-    type_action: "RETOUR_PROBLEME_SCAN",
-    description: `Retour avec problème après scan pour le matériel ${emprunt.materiels?.nom || ""}. Type : ${typeProbleme}. Commentaire : ${commentaire_retour.trim()}`,
+    type_action: "DECLARATION_RETOUR_PROBLEME",
+    description: `Retour avec problème déclaré par le travailleur pour le matériel ${emprunt.materiels?.nom || ""}. Type : ${typeProbleme}. Commentaire : ${commentaire_retour.trim()}`,
   });
 
   return updatedEmprunt;

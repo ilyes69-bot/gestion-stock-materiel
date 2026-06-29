@@ -4,6 +4,10 @@ const {
   getAllEmprunts,
   validateReturn,
   markAsDamaged,
+  validerDemandeEmprunt,
+  refuserDemandeEmprunt,
+  confirmerRetourNormalFinal,
+  confirmerRetourEndommageFinal,
 } = require("../services/emprunt.service");
 
 const create = async (req, res) => {
@@ -78,11 +82,80 @@ const damage = async (req, res) => {
     });
   }
 };
+const validerDemande = async (req, res) => {
+  try {
+    const emprunt = await validerDemandeEmprunt(req.params.id, req.user.id);
 
+    res.status(200).json({
+      message: "Demande d'emprunt validée avec succès",
+      emprunt,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
+    });
+  }
+};
+
+const refuserDemande = async (req, res) => {
+  try {
+    const emprunt = await refuserDemandeEmprunt(req.params.id, req.user.id);
+
+    res.status(200).json({
+      message: "Demande d'emprunt refusée avec succès",
+      emprunt,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
+    });
+  }
+};
+
+const confirmerRetourNormal = async (req, res) => {
+  try {
+    const emprunt = await confirmerRetourNormalFinal(
+      req.params.id,
+      req.user.id
+    );
+
+    res.status(200).json({
+      message: "Retour normal confirmé avec succès",
+      emprunt,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
+    });
+  }
+};
+
+const confirmerRetourEndommage = async (req, res) => {
+  try {
+    const emprunt = await confirmerRetourEndommageFinal(
+      req.params.id,
+      req.body,
+      req.user.id
+    );
+
+    res.status(200).json({
+      message: "Retour endommagé confirmé avec succès",
+      emprunt,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
+    });
+  }
+};
 module.exports = {
   create,
   getMine,
   getAll,
   validate,
   damage,
+  validerDemande,
+  refuserDemande,
+  confirmerRetourNormal,
+  confirmerRetourEndommage,
 };

@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   getAllEmprunts,
-  validateReturn,
-  markAsDamaged,
+  validerDemandeEmprunt,
+  refuserDemandeEmprunt,
+  confirmerRetourNormalFinal,
+  confirmerRetourEndommageFinal,
 } from "../../services/empruntService";
 import {
   getEmpruntBadgeClass,
@@ -22,6 +24,7 @@ const GestionEmprunts = () => {
 
   const loadEmprunts = async () => {
     try {
+      setLoading(true);
       const data = await getAllEmprunts();
       setEmprunts(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -42,7 +45,7 @@ const GestionEmprunts = () => {
   };
 
   const getClientName = (emprunt) => {
-    const client = emprunt.users || emprunt.client;
+    const client = emprunt.client || emprunt.users;
 
     if (!client) {
       return "Client inconnu";
@@ -52,7 +55,7 @@ const GestionEmprunts = () => {
   };
 
   const getClientEmail = (emprunt) => {
-    const client = emprunt.users || emprunt.client;
+    const client = emprunt.client || emprunt.users;
     return client?.email || "Email non renseigné";
   };
 
@@ -61,9 +64,9 @@ const GestionEmprunts = () => {
     return materiel?.nom || "Matériel inconnu";
   };
 
-  const handleValidateReturn = async (id) => {
+  const handleValiderDemande = async (id) => {
     const confirmation = window.confirm(
-      "Voulez-vous vraiment valider ce retour ?"
+      "Voulez-vous valider cette demande d'emprunt ?"
     );
 
     if (!confirmation) return;
@@ -72,14 +75,14 @@ const GestionEmprunts = () => {
       setActionLoading(true);
       setError("");
 
-      await validateReturn(id);
+      await validerDemandeEmprunt(id);
 
-      toast.success("Retour validé avec succès.");
+      toast.success("Demande validée avec succès.");
       await loadEmprunts();
     } catch (err) {
       const message =
         err.response?.data?.message ||
-        "Erreur lors de la validation du retour.";
+        "Erreur lors de la validation de la demande.";
 
       setError(message);
       toast.error(message);
@@ -88,10 +91,64 @@ const GestionEmprunts = () => {
     }
   };
 
-  const openDamageForm = (id) => {
-    setSelectedDamageId(id);
-    setTypeProbleme("Matériel endommagé");
-    setCommentaireRetour("");
+  const handleRefuserDemande = async (id) => {
+    const confirmation = window.confirm(
+      "Voulez-vous refuser cette demande d'emprunt ?"
+    );
+
+    if (!confirmation) return;
+
+    try {
+      setActionLoading(true);
+      setError("");
+
+      await refuserDemandeEmprunt(id);
+
+      toast.success("Demande refusée avec succès.");
+      await loadEmprunts();
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Erreur lors du refus de la demande.";
+
+      setError(message);
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmerRetourNormal = async (id) => {
+    const confirmation = window.confirm(
+      "Confirmer définitivement ce retour en bon état ?"
+    );
+
+    if (!confirmation) return;
+
+    try {
+      setActionLoading(true);
+      setError("");
+
+      await confirmerRetourNormalFinal(id);
+
+      toast.success("Retour normal confirmé avec succès.");
+      await loadEmprunts();
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Erreur lors de la confirmation du retour.";
+
+      setError(message);
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openDamageForm = (emprunt) => {
+    setSelectedDamageId(emprunt.id);
+    setTypeProbleme(emprunt.type_probleme_retour || "Matériel endommagé");
+    setCommentaireRetour(emprunt.commentaire_retour || "");
     setError("");
   };
 
@@ -101,7 +158,7 @@ const GestionEmprunts = () => {
     setCommentaireRetour("");
   };
 
-  const handleMarkAsDamaged = async (id) => {
+  const handleConfirmerRetourEndommage = async (id) => {
     if (!commentaireRetour.trim()) {
       toast.error("Veuillez écrire un commentaire.");
       return;
@@ -111,12 +168,12 @@ const GestionEmprunts = () => {
       setActionLoading(true);
       setError("");
 
-      await markAsDamaged(id, {
+      await confirmerRetourEndommageFinal(id, {
         type_probleme_retour: typeProbleme,
         commentaire_retour: commentaireRetour,
       });
 
-      toast.success("Matériel signalé comme endommagé.");
+      toast.success("Retour endommagé confirmé avec succès.");
 
       setSelectedDamageId(null);
       setTypeProbleme("Matériel endommagé");
@@ -126,7 +183,7 @@ const GestionEmprunts = () => {
     } catch (err) {
       const message =
         err.response?.data?.message ||
-        "Erreur lors du signalement du matériel endommagé.";
+        "Erreur lors de la confirmation du retour endommagé.";
 
       setError(message);
       toast.error(message);
@@ -142,10 +199,10 @@ const GestionEmprunts = () => {
   return (
     <div className="admin-emprunts-page">
       <div className="page-header">
-        <h1>Gestion des emprunts</h1>
+        <h1>Gestion des emprunts et retours</h1>
         <p>
-          Consultez les emprunts, validez les retours normaux ou signalez les
-          matériels endommagés avec un commentaire.
+          L’administrateur valide les demandes d’emprunt et confirme
+          définitivement les retours après déclaration du travailleur.
         </p>
       </div>
 
@@ -175,7 +232,7 @@ const GestionEmprunts = () => {
             </p>
 
             <p>
-              <strong>Date retour :</strong>{" "}
+              <strong>Date retour déclarée :</strong>{" "}
               {formatDate(emprunt.date_retour_effective)}
             </p>
 
@@ -186,9 +243,14 @@ const GestionEmprunts = () => {
               </span>
             </p>
 
+            <p>
+              <strong>Sortie confirmée :</strong>{" "}
+              {emprunt.sortie_confirmee ? "Oui" : "Non"}
+            </p>
+
             {emprunt.probleme_retour && (
               <div className="admin-return-problem-box">
-                <strong>Problème de retour :</strong>
+                <strong>Problème déclaré par le travailleur :</strong>
 
                 <p>
                   <span>Type :</span>{" "}
@@ -202,73 +264,116 @@ const GestionEmprunts = () => {
               </div>
             )}
 
-            {selectedDamageId === emprunt.id && (
-              <div className="admin-damage-form">
-                <label>Type du problème</label>
-
-                <select
-                  value={typeProbleme}
-                  onChange={(e) => setTypeProbleme(e.target.value)}
+            {emprunt.statut === "EN_ATTENTE_VALIDATION" && (
+              <div className="emprunt-admin-actions">
+                <button
+                  onClick={() => handleValiderDemande(emprunt.id)}
+                  disabled={actionLoading}
                 >
-                  <option value="Matériel endommagé">Matériel endommagé</option>
-                  <option value="Matériel cassé">Matériel cassé</option>
-                  <option value="Pièce manquante">Pièce manquante</option>
-                  <option value="Problème technique">Problème technique</option>
-                  <option value="Autre">Autre</option>
-                </select>
+                  Valider demande
+                </button>
 
-                <label>Commentaire du retour</label>
-
-                <textarea
-                  placeholder="Exemple : La table DJ ne s'allume plus, câble d'alimentation abîmé..."
-                  value={commentaireRetour}
-                  onChange={(e) => setCommentaireRetour(e.target.value)}
-                ></textarea>
-
-                <div className="emprunt-admin-actions">
-                  <button
-                    className="delete-button"
-                    onClick={() => handleMarkAsDamaged(emprunt.id)}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading ? "Validation..." : "Confirmer problème"}
-                  </button>
-
-                  <button
-                    className="secondary-button"
-                    onClick={cancelDamageForm}
-                    disabled={actionLoading}
-                  >
-                    Annuler
-                  </button>
-                </div>
+                <button
+                  className="delete-button"
+                  onClick={() => handleRefuserDemande(emprunt.id)}
+                  disabled={actionLoading}
+                >
+                  Refuser demande
+                </button>
               </div>
             )}
 
-            {emprunt.statut === "EN_COURS" &&
-              selectedDamageId !== emprunt.id && (
+            {emprunt.statut === "VALIDE" && (
+              <p className="emprunt-admin-muted">
+                Demande validée. En attente de la confirmation de sortie par le
+                travailleur.
+              </p>
+            )}
+
+            {emprunt.statut === "EN_COURS" && (
+              <p className="emprunt-admin-muted">
+                Matériel sorti. En attente du retour par le travailleur.
+              </p>
+            )}
+
+            {emprunt.statut === "EN_ATTENTE_CONFIRMATION_RETOUR" && (
+              <>
                 <div className="emprunt-admin-actions">
                   <button
-                    onClick={() => handleValidateReturn(emprunt.id)}
+                    onClick={() => handleConfirmerRetourNormal(emprunt.id)}
                     disabled={actionLoading}
                   >
-                    Valider retour
+                    Confirmer retour normal
                   </button>
 
                   <button
                     className="delete-button"
-                    onClick={() => openDamageForm(emprunt.id)}
+                    onClick={() => openDamageForm(emprunt)}
                     disabled={actionLoading}
                   >
-                    Signaler endommagé
+                    Confirmer endommagé
                   </button>
                 </div>
-              )}
+
+                {selectedDamageId === emprunt.id && (
+                  <div className="admin-damage-form">
+                    <label>Type du problème</label>
+
+                    <select
+                      value={typeProbleme}
+                      onChange={(e) => setTypeProbleme(e.target.value)}
+                    >
+                      <option value="Matériel endommagé">
+                        Matériel endommagé
+                      </option>
+                      <option value="Matériel cassé">Matériel cassé</option>
+                      <option value="Pièce manquante">Pièce manquante</option>
+                      <option value="Problème technique">
+                        Problème technique
+                      </option>
+                      <option value="Autre">Autre</option>
+                    </select>
+
+                    <label>Commentaire final</label>
+
+                    <textarea
+                      placeholder="Exemple : Le micro ne fonctionne plus correctement..."
+                      value={commentaireRetour}
+                      onChange={(e) => setCommentaireRetour(e.target.value)}
+                    ></textarea>
+
+                    <div className="emprunt-admin-actions">
+                      <button
+                        className="delete-button"
+                        onClick={() =>
+                          handleConfirmerRetourEndommage(emprunt.id)
+                        }
+                        disabled={actionLoading}
+                      >
+                        {actionLoading
+                          ? "Validation..."
+                          : "Confirmer problème"}
+                      </button>
+
+                      <button
+                        className="secondary-button"
+                        onClick={cancelDamageForm}
+                        disabled={actionLoading}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
             {emprunt.statut === "RETOURNE" && (
-              <p className="emprunt-admin-muted">
-                Cet emprunt est déjà clôturé.
-              </p>
+              <p className="emprunt-admin-muted">Emprunt clôturé.</p>
+            )}
+
+            {emprunt.statut === "REFUSE" && (
+              <p className="emprunt-admin-muted">Demande refusée.</p>
             )}
           </div>
         ))}
