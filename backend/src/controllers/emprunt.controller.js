@@ -1,95 +1,88 @@
 const {
   createEmprunt,
-  getMyEmprunts,
+  getMesEmprunts,
   getAllEmprunts,
-  validerRetour,
-  signalerMaterielEndommage,
+  validateReturn,
+  markAsDamaged,
 } = require("../services/emprunt.service");
 
-const addEmprunt = async (req, res) => {
+const create = async (req, res) => {
   try {
-    const emprunt = await createEmprunt({
-      clientId: req.user.id,
-      materielId: req.body.materiel_id,
-      dateDebut: req.body.date_debut,
-      dateFin: req.body.date_fin,
-    });
+    const emprunt = await createEmprunt(req.user.id, req.body);
 
     res.status(201).json({
       message: "Emprunt créé avec succès",
-      data: emprunt,
+      emprunt,
     });
   } catch (error) {
-    res.status(400).json({
-      message: error.message,
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
     });
   }
 };
 
-const getMesEmprunts = async (req, res) => {
+const getMine = async (req, res) => {
   try {
-    const emprunts = await getMyEmprunts(req.user.id);
+    const emprunts = await getMesEmprunts(req.user.id);
 
     res.status(200).json({
-      message: "Liste de mes emprunts",
-      data: emprunts,
+      emprunts,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
     });
   }
 };
 
-const getEmpruntsAdmin = async (req, res) => {
+const getAll = async (req, res) => {
   try {
     const emprunts = await getAllEmprunts();
 
     res.status(200).json({
-      message: "Liste des emprunts",
-      data: emprunts,
+      emprunts,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
     });
   }
 };
 
-const validerRetourMateriel = async (req, res) => {
+const validate = async (req, res) => {
   try {
-    const emprunt = await validerRetour(req.params.id, req.user.id);
+    const emprunt = await validateReturn(req.params.id, req.user.id);
 
     res.status(200).json({
       message: "Retour validé avec succès",
-      data: emprunt,
+      emprunt,
     });
   } catch (error) {
-    res.status(400).json({
-      message: error.message,
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
     });
   }
 };
 
-const signalerEndommage = async (req, res) => {
+const damage = async (req, res) => {
   try {
-    const emprunt = await signalerMaterielEndommage(req.params.id, req.user.id);
+    const emprunt = await markAsDamaged(req.params.id, req.body, req.user.id);
 
     res.status(200).json({
       message: "Matériel signalé comme endommagé",
-      data: emprunt,
+      emprunt,
     });
   } catch (error) {
-    res.status(400).json({
-      message: error.message,
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
     });
   }
 };
 
 module.exports = {
-  addEmprunt,
-  getMesEmprunts,
-  getEmpruntsAdmin,
-  validerRetourMateriel,
-  signalerEndommage,
+  create,
+  getMine,
+  getAll,
+  validate,
+  damage,
 };

@@ -2,23 +2,24 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  addEmprunt,
-  getMesEmprunts,
-  getEmpruntsAdmin,
-  validerRetourMateriel,
-  signalerEndommage,
+  create,
+  getMine,
+  getAll,
+  validate,
+  damage,
 } = require("../controllers/emprunt.controller");
 
 const authMiddleware = require("../middlewares/auth.middleware");
 const roleMiddleware = require("../middlewares/role.middleware");
 
-// Client
-router.post("/", authMiddleware, roleMiddleware("client"), addEmprunt);
-router.get("/me", authMiddleware, roleMiddleware("client"), getMesEmprunts);
+router.post("/", authMiddleware, roleMiddleware("client"), create);
 
-// Admin
-router.get("/", authMiddleware, roleMiddleware("admin"), getEmpruntsAdmin);
-router.put("/:id/retour-valide", authMiddleware, roleMiddleware("admin"), validerRetourMateriel);
-router.put("/:id/endommage", authMiddleware, roleMiddleware("admin"), signalerEndommage);
+router.get("/me", authMiddleware, roleMiddleware("client"), getMine);
+
+router.get("/", authMiddleware, roleMiddleware("admin"), getAll);
+
+router.put("/:id/retour-valide", authMiddleware, roleMiddleware("admin"), validate);
+
+router.put("/:id/endommage", authMiddleware, roleMiddleware("admin"), damage);
 
 module.exports = router;

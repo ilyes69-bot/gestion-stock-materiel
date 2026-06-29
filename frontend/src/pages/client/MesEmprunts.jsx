@@ -70,6 +70,21 @@ const MesEmprunts = () => {
                   {getEmpruntLabel(emprunt)}
                 </span>
               </div>
+              {emprunt.probleme_retour && (
+                <div className="client-return-problem-box">
+                  <strong>Problème signalé au retour :</strong>
+
+                  <p>
+                    <span>Type :</span>{" "}
+                    {emprunt.type_probleme_retour || "Non renseigné"}
+                  </p>
+
+                  <p>
+                    <span>Commentaire :</span>{" "}
+                    {emprunt.commentaire_retour || "Aucun commentaire"}
+                  </p>
+                </div>
+              )}
 
               <div className="my-loan-info-box">
                 <span>Catégorie</span>

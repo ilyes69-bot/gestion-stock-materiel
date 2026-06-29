@@ -1,84 +1,103 @@
 const supabase = require("../config/supabase");
-const checkDates = require("../utils/checkDates");
-const { createNotification } = require("./notification.service");
-const { createHistorique } = require("./historique.service");
 
-const createEmprunt = async ({ clientId, materielId, dateDebut, dateFin }) => {
-  if (!materielId) {
-    throw new Error("Le matériel est obligatoire");
+const todayDate = () => {
+  return new Date().toISOString().split("T")[0];
+};
+
+const checkDates = (dateDebut, dateFin) => {
+  if (!dateDebut || !dateFin) {
+    const error = new Error("Les dates sont obligatoires");
+    error.status = 400;
+    throw error;
   }
 
-  checkDates(dateDebut, dateFin);
+  const debut = new Date(dateDebut);
+  const fin = new Date(dateFin);
+
+  if (fin < debut) {
+    const error = new Error("La date de fin doit être supérieure ou égale à la date de début");
+    error.status = 400;
+    throw error;
+  }
+};
+
+const createEmprunt = async (clientId, empruntData) => {
+  const { materiel_id, date_debut, date_fin } = empruntData;
+
+  checkDates(date_debut, date_fin);
 
   const { data: materiel, error: materielError } = await supabase
     .from("materiels")
     .select("*")
-    .eq("id", materielId)
-    .maybeSingle();
+    .eq("id", materiel_id)
+    .single();
 
-  if (materielError) {
-    throw new Error(materielError.message);
-  }
-
-  if (!materiel) {
-    throw new Error("Matériel introuvable");
+  if (materielError || !materiel) {
+    const error = new Error("Matériel introuvable");
+    error.status = 404;
+    throw error;
   }
 
   if (materiel.statut !== "DISPONIBLE") {
-    throw new Error("Ce matériel n'est pas disponible");
+    const error = new Error("Ce matériel n'est pas disponible");
+    error.status = 400;
+    throw error;
   }
 
   if (materiel.etat !== "BON_ETAT") {
-    throw new Error("Ce matériel n'est pas en bon état");
+    const error = new Error("Ce matériel n'est pas en bon état");
+    error.status = 400;
+    throw error;
   }
 
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
-    .insert([
-      {
-        client_id: clientId,
-        materiel_id: materielId,
-        date_debut: dateDebut,
-        date_fin: dateFin,
-        statut: "EN_COURS",
-      },
-    ])
-    .select("*")
+    .insert({
+      client_id: clientId,
+      materiel_id,
+      date_debut,
+      date_fin,
+      statut: "EN_COURS",
+      probleme_retour: false,
+      type_probleme_retour: null,
+      commentaire_retour: null,
+    })
+    .select()
     .single();
 
   if (empruntError) {
-    throw new Error(empruntError.message);
+    const error = new Error("Erreur lors de la création de l'emprunt");
+    error.status = 500;
+    throw error;
   }
 
-  const { error: updateError } = await supabase
+  await supabase
     .from("materiels")
     .update({
       statut: "EMPRUNTE",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", materielId);
+    .eq("id", materiel_id);
 
-  if (updateError) {
-    throw new Error(updateError.message);
-  }
-  await createNotification({
-  userId: clientId,
-  contenu: `Votre emprunt du matériel "${materiel.nom}" a été créé avec succès.`,
-  type: "EMPRUNT_CREE",
-});
+  await supabase.from("notifications").insert({
+    user_id: clientId,
+    contenu: `Votre emprunt du matériel ${materiel.nom} a été enregistré.`,
+    type: "EMPRUNT",
+    lu: false,
+  });
 
-await createHistorique({
-  userId: clientId,
-  materielId: materielId,
-  empruntId: emprunt.id,
-  typeAction: "EMPRUNT_CREE",
-  description: `Le client a emprunté le matériel "${materiel.nom}".`,
-});
+  await supabase.from("historique_actions").insert({
+    user_id: clientId,
+    materiel_id,
+    emprunt_id: emprunt.id,
+    type_action: "CREATION_EMPRUNT",
+    description: `Création d'un emprunt pour le matériel ${materiel.nom}.`,
+  });
 
   return emprunt;
 };
 
-const getMyEmprunts = async (clientId) => {
+const getMesEmprunts = async (clientId) => {
   const { data, error } = await supabase
     .from("emprunts")
     .select(`
@@ -89,14 +108,17 @@ const getMyEmprunts = async (clientId) => {
         description,
         categorie,
         statut,
-        etat
+        etat,
+        image_url
       )
     `)
     .eq("client_id", clientId)
     .order("created_at", { ascending: false });
 
   if (error) {
-    throw new Error(error.message);
+    const err = new Error("Erreur lors du chargement de vos emprunts");
+    err.status = 500;
+    throw err;
   }
 
   return data;
@@ -119,55 +141,73 @@ const getAllEmprunts = async () => {
         description,
         categorie,
         statut,
-        etat
+        etat,
+        image_url
       )
     `)
     .order("created_at", { ascending: false });
 
   if (error) {
-    throw new Error(error.message);
+    const err = new Error("Erreur lors du chargement des emprunts");
+    err.status = 500;
+    throw err;
   }
 
   return data;
 };
 
-const validerRetour = async (empruntId, adminId) => {
+const validateReturn = async (empruntId, adminId) => {
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
-    .select("*")
+    .select(`
+      *,
+      users (
+        id,
+        nom,
+        prenom,
+        email
+      ),
+      materiels (
+        id,
+        nom
+      )
+    `)
     .eq("id", empruntId)
-    .maybeSingle();
+    .single();
 
-  if (empruntError) {
-    throw new Error(empruntError.message);
+  if (empruntError || !emprunt) {
+    const error = new Error("Emprunt introuvable");
+    error.status = 404;
+    throw error;
   }
 
-  if (!emprunt) {
-    throw new Error("Emprunt introuvable");
+  if (emprunt.statut === "RETOURNE") {
+    const error = new Error("Cet emprunt est déjà retourné");
+    error.status = 400;
+    throw error;
   }
 
-  if (emprunt.statut !== "EN_COURS") {
-    throw new Error("Cet emprunt n'est pas en cours");
-  }
-
-  const today = new Date().toISOString().split("T")[0];
-
-  const { data: empruntUpdated, error: updateEmpruntError } = await supabase
+  const { data: updatedEmprunt, error: updateError } = await supabase
     .from("emprunts")
     .update({
       statut: "RETOURNE",
-      date_retour_effective: today,
+      date_retour_effective: todayDate(),
+      probleme_retour: false,
+      type_probleme_retour: null,
+      commentaire_retour: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
-    .select("*")
+    .select()
     .single();
 
-  if (updateEmpruntError) {
-    throw new Error(updateEmpruntError.message);
+  if (updateError) {
+    const error = new Error("Erreur lors de la validation du retour");
+    error.status = 500;
+    throw error;
   }
 
-  const { error: updateMaterielError } = await supabase
+  await supabase
     .from("materiels")
     .update({
       statut: "DISPONIBLE",
@@ -176,63 +216,86 @@ const validerRetour = async (empruntId, adminId) => {
     })
     .eq("id", emprunt.materiel_id);
 
-  if (updateMaterielError) {
-    throw new Error(updateMaterielError.message);
-  }
-  await createNotification({
-  userId: emprunt.client_id,
-  contenu: "Votre retour de matériel a été validé avec succès.",
-  type: "RETOUR_VALIDE",
-});
+  await supabase.from("notifications").insert({
+    user_id: emprunt.client_id,
+    contenu: `Le retour du matériel ${emprunt.materiels?.nom || ""} a été validé.`,
+    type: "RETOUR",
+    lu: false,
+  });
 
-await createHistorique({
-  userId: adminId,
-  materielId: emprunt.materiel_id,
-  empruntId: empruntId,
-  typeAction: "RETOUR_VALIDE",
-  description: "L’administrateur a validé le retour du matériel.",
-});
+  await supabase.from("historique_actions").insert({
+    user_id: adminId,
+    materiel_id: emprunt.materiel_id,
+    emprunt_id: emprunt.id,
+    type_action: "VALIDATION_RETOUR",
+    description: `Retour validé pour le matériel ${emprunt.materiels?.nom || ""}.`,
+  });
 
-  return empruntUpdated;
+  return updatedEmprunt;
 };
 
-const signalerMaterielEndommage = async (empruntId, adminId) => {
+const markAsDamaged = async (empruntId, data, adminId) => {
+  const { type_probleme_retour, commentaire_retour } = data;
+
+  if (!commentaire_retour || commentaire_retour.trim() === "") {
+    const error = new Error("Le commentaire du problème est obligatoire");
+    error.status = 400;
+    throw error;
+  }
+
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
-    .select("*")
+    .select(`
+      *,
+      users (
+        id,
+        nom,
+        prenom,
+        email
+      ),
+      materiels (
+        id,
+        nom
+      )
+    `)
     .eq("id", empruntId)
-    .maybeSingle();
+    .single();
 
-  if (empruntError) {
-    throw new Error(empruntError.message);
+  if (empruntError || !emprunt) {
+    const error = new Error("Emprunt introuvable");
+    error.status = 404;
+    throw error;
   }
 
-  if (!emprunt) {
-    throw new Error("Emprunt introuvable");
+  if (emprunt.statut === "RETOURNE") {
+    const error = new Error("Cet emprunt est déjà retourné");
+    error.status = 400;
+    throw error;
   }
 
-  if (emprunt.statut !== "EN_COURS") {
-    throw new Error("Cet emprunt n'est pas en cours");
-  }
+  const typeProbleme = type_probleme_retour || "Matériel endommagé";
 
-  const today = new Date().toISOString().split("T")[0];
-
-  const { data: empruntUpdated, error: updateEmpruntError } = await supabase
+  const { data: updatedEmprunt, error: updateError } = await supabase
     .from("emprunts")
     .update({
       statut: "RETOURNE",
-      date_retour_effective: today,
+      date_retour_effective: todayDate(),
+      probleme_retour: true,
+      type_probleme_retour: typeProbleme,
+      commentaire_retour: commentaire_retour.trim(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
-    .select("*")
+    .select()
     .single();
 
-  if (updateEmpruntError) {
-    throw new Error(updateEmpruntError.message);
+  if (updateError) {
+    const error = new Error("Erreur lors du signalement du matériel endommagé");
+    error.status = 500;
+    throw error;
   }
 
-  const { error: updateMaterielError } = await supabase
+  await supabase
     .from("materiels")
     .update({
       statut: "INDISPONIBLE",
@@ -241,30 +304,28 @@ const signalerMaterielEndommage = async (empruntId, adminId) => {
     })
     .eq("id", emprunt.materiel_id);
 
-  if (updateMaterielError) {
-    throw new Error(updateMaterielError.message);
-  }
-    await createNotification({
-    userId: emprunt.client_id,
-    contenu: "Le matériel retourné a été signalé comme endommagé.",
+  await supabase.from("notifications").insert({
+    user_id: emprunt.client_id,
+    contenu: `Le matériel ${emprunt.materiels?.nom || ""} a été signalé comme endommagé. Commentaire : ${commentaire_retour.trim()}`,
     type: "MATERIEL_ENDOMMAGE",
+    lu: false,
   });
 
-  await createHistorique({
-    userId: adminId,
-    materielId: emprunt.materiel_id,
-    empruntId: empruntId,
-    typeAction: "MATERIEL_ENDOMMAGE",
-    description: "L’administrateur a signalé le matériel comme endommagé.",
+  await supabase.from("historique_actions").insert({
+    user_id: adminId,
+    materiel_id: emprunt.materiel_id,
+    emprunt_id: emprunt.id,
+    type_action: "RETOUR_AVEC_PROBLEME",
+    description: `Retour avec problème pour le matériel ${emprunt.materiels?.nom || ""}. Type : ${typeProbleme}. Commentaire : ${commentaire_retour.trim()}`,
   });
 
-  return empruntUpdated;
+  return updatedEmprunt;
 };
 
 module.exports = {
   createEmprunt,
-  getMyEmprunts,
+  getMesEmprunts,
   getAllEmprunts,
-  validerRetour,
-  signalerMaterielEndommage,
+  validateReturn,
+  markAsDamaged,
 };
