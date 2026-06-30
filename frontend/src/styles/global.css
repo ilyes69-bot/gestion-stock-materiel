@@ -4473,3 +4473,191 @@ a.secondary-button {
     width: 100%;
   }
 }
+.materiel-card-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.materiel-card-actions button {
+  width: 100%;
+}
+/* =========================
+   PAGE CLIENT - PANIER
+   ========================= */
+
+.client-panier-page {
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 30px;
+}
+
+.client-panier-page .page-header {
+  margin-bottom: 28px;
+}
+
+.client-panier-page .page-header h1 {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: 36px;
+  font-weight: 900;
+}
+
+.client-panier-page .page-header p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.6;
+  max-width: 760px;
+}
+
+.panier-empty-box {
+  margin-top: 30px;
+  padding: 28px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+}
+
+.panier-empty-box h2 {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: 24px;
+}
+
+.panier-empty-box p {
+  margin: 0;
+  color: #cbd5e1;
+}
+
+.panier-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 22px;
+  margin-bottom: 30px;
+}
+
+.panier-card {
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.035)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panier-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.panier-card h3 {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.panier-card p {
+  margin: 6px 0;
+  color: #e5e7eb;
+  line-height: 1.5;
+}
+
+.panier-card strong {
+  color: #ffffff;
+}
+
+.panier-card .delete-button {
+  margin-top: 10px;
+  width: fit-content;
+  min-width: 110px;
+}
+
+.panier-form {
+  margin-top: 30px;
+  padding: 26px;
+  border-radius: 24px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 122, 0, 0.13),
+    rgba(255, 255, 255, 0.045)
+  );
+  border: 1px solid rgba(255, 122, 0, 0.25);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.34);
+}
+
+.panier-form h2 {
+  margin: 0 0 20px;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.panier-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.panier-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.panier-form input {
+  width: 100%;
+}
+
+.panier-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.panier-actions button {
+  min-width: 160px;
+  min-height: 44px;
+}
+
+@media (max-width: 700px) {
+  .client-panier-page {
+    padding: 20px;
+  }
+
+  .client-panier-page .page-header h1 {
+    font-size: 30px;
+  }
+
+  .panier-list {
+    grid-template-columns: 1fr;
+  }
+
+  .panier-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panier-actions {
+    flex-direction: column;
+  }
+
+  .panier-actions button {
+    width: 100%;
+  }
+}

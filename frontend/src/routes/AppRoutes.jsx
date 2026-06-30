@@ -37,6 +37,8 @@ import WorkerScanner from "../pages/worker/WorkerScanner";
 import WorkerLayout from "../components/layout/WorkerLayout";
 import WorkerEmprunts from "../pages/worker/WorkerEmprunts";
 
+import Panier from "../pages/client/Panier";
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
@@ -63,6 +65,7 @@ const AppRoutes = () => {
           <Route path="/client/notifications" element={<Notifications />} />
           <Route path="/client/historique" element={<HistoriqueClient />} />
           <Route path="/client/profil" element={<ProfilClient />} />
+          <Route path="/client/panier" element={<Panier />} />
         </Route>
 
         {/* Routes Admin */}

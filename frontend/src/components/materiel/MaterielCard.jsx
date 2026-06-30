@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import { addToPanier } from "../../utils/panier";
 
 const MaterielCard = ({ materiel }) => {
   const getStatutClass = () => {
-    if (materiel.statut === "DISPONIBLE") return "badge badge-success";
+    if (materiel.statut === "DISPONIBLE") return "badge badge-sccess";
     if (materiel.statut === "EMPRUNTE") return "badge badge-warning";
     return "badge badge-danger";
   };
@@ -10,6 +12,21 @@ const MaterielCard = ({ materiel }) => {
   const getEtatClass = () => {
     if (materiel.etat === "BON_ETAT") return "badge badge-success";
     return "badge badge-danger";
+  };
+
+  const handleAddToPanier = () => {
+    if (materiel.statut !== "DISPONIBLE" || materiel.etat !== "BON_ETAT") {
+      toast.error("Ce matériel ne peut pas être ajouté au panier.");
+      return;
+    }
+
+    const result = addToPanier(materiel);
+
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
   };
 
   return (
@@ -52,6 +69,17 @@ const MaterielCard = ({ materiel }) => {
           Voir détail
         </Link>
       </div>
+      {materiel.statut === "DISPONIBLE" && materiel.etat === "BON_ETAT" && (
+        <div className="materiel-card-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleAddToPanier}
+          >
+            Ajouter au panier
+          </button>
+        </div>
+      )}
     </div>
   );
 };
