@@ -57,6 +57,110 @@ const ListeMateriels = () => {
   const getQrScanUrl = (qrToken) => {
   return `${window.location.origin}/worker/scan/${qrToken}`;
   };
+      const printQrCode = (materiel) => {
+      const canvas = document.getElementById(`qr-canvas-${materiel.id}`);
+
+      if (!canvas) {
+        alert("QR code introuvable.");
+        return;
+      }
+
+      const qrImage = canvas.toDataURL("image/png");
+      const scanUrl = getQrScanUrl(materiel.qr_token);
+
+      const printWindow = window.open("", "_blank");
+
+      if (!printWindow) {
+        alert("Impossible d’ouvrir la fenêtre d’impression.");
+        return;
+      }
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>QR Code - ${materiel.nom}</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                background: #ffffff;
+                color: #111111;
+                padding: 30px;
+                text-align: center;
+              }
+
+              .qr-card {
+                width: 320px;
+                margin: 0 auto;
+                padding: 22px;
+                border: 2px solid #111111;
+                border-radius: 16px;
+              }
+
+              h1 {
+                font-size: 22px;
+                margin: 0 0 8px;
+              }
+
+              h2 {
+                font-size: 18px;
+                margin: 0 0 18px;
+              }
+
+              img {
+                width: 210px;
+                height: 210px;
+                margin: 12px 0;
+              }
+
+              p {
+                margin: 8px 0;
+                font-size: 13px;
+              }
+
+              .small {
+                font-size: 11px;
+                word-break: break-all;
+                color: #555555;
+              }
+
+              @media print {
+                body {
+                  padding: 0;
+                }
+
+                .qr-card {
+                  margin-top: 20px;
+                }
+              }
+            </style>
+          </head>
+
+          <body>
+            <div class="qr-card">
+              <h1>StockManager</h1>
+              <h2>${materiel.nom}</h2>
+
+              <img src="${qrImage}" alt="QR Code matériel" />
+
+              <p><strong>Catégorie :</strong> ${materiel.categorie || "Non renseignée"}</p>
+              <p><strong>Statut :</strong> ${materiel.statut || "Non renseigné"}</p>
+              <p><strong>État :</strong> ${materiel.etat || "Non renseigné"}</p>
+
+              <p class="small">${scanUrl}</p>
+            </div>
+
+            <script>
+              window.onload = function() {
+                window.print();
+              };
+            </script>
+          </body>
+        </html>
+      `);
+
+      printWindow.document.close();
+    };
 
   const copyQrLink = async (qrToken) => {
     const link = getQrScanUrl(qrToken);
@@ -138,8 +242,9 @@ const ListeMateriels = () => {
 
                   <div className="admin-materiel-qr-image">
                     <QRCodeCanvas
+                      id={`qr-canvas-${materiel.id}`}
                       value={getQrScanUrl(materiel.qr_token)}
-                      size={120}
+                      size={140}
                       level="H"
                       includeMargin={true}
                     />
@@ -151,6 +256,13 @@ const ListeMateriels = () => {
                     onClick={() => copyQrLink(materiel.qr_token)}
                   >
                     Copier lien scan
+                  </button>
+                  <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => printQrCode(materiel)}
+                    >
+                      Imprimer QR code
                   </button>
                 </div>
               )}

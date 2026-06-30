@@ -4339,3 +4339,14 @@ a.secondary-button {
     padding: 18px;
   }
 }
+.admin-materiel-qr-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.admin-materiel-qr-actions button {
+  min-width: 135px;
+}
