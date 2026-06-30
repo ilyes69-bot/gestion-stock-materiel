@@ -4384,3 +4384,92 @@ a.secondary-button {
   border-color: #ff7a00;
   color: #000000;
 }
+/* =========================
+   POURBOIRE BA9CHICH
+   ========================= */
+
+.pourboire-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.pourboire-modal {
+  width: 100%;
+  max-width: 460px;
+  padding: 28px;
+  border-radius: 24px;
+  background: linear-gradient(
+    145deg,
+    rgba(18, 18, 24, 0.98),
+    rgba(28, 28, 34, 0.98)
+  );
+  border: 1px solid rgba(255, 122, 0, 0.28);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+.pourboire-modal h2 {
+  margin: 0 0 14px;
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.pourboire-modal p {
+  margin: 0;
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+.pourboire-emprunt-info {
+  margin: 18px 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 122, 0, 0.12);
+  border: 1px solid rgba(255, 122, 0, 0.26);
+  color: #ffffff;
+}
+
+.pourboire-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.pourboire-modal-actions button {
+  min-width: 150px;
+}
+
+.pourboire-card-box {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 122, 0, 0.1);
+  border: 1px solid rgba(255, 122, 0, 0.24);
+}
+
+.pourboire-card-box p {
+  margin: 0 0 10px;
+  color: #fed7aa;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .pourboire-modal-actions {
+    flex-direction: column;
+  }
+
+  .pourboire-modal-actions button {
+    width: 100%;
+  }
+}

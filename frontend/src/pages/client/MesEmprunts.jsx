@@ -10,6 +10,10 @@ const MesEmprunts = () => {
   const [emprunts, setEmprunts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showPourboireModal, setShowPourboireModal] = useState(false);
+  const [selectedPourboireEmprunt, setSelectedPourboireEmprunt] = useState(null);
+
+  const BA9CHICH_URL = "https://ba9chich.com//fr/IlyesChniti";
 
   const loadEmprunts = async () => {
     try {
@@ -23,8 +27,53 @@ const MesEmprunts = () => {
   };
 
   useEffect(() => {
+    if (!emprunts || emprunts.length === 0) {
+      return;
+    }
+
+    const empruntRetourne = emprunts.find((emprunt) => {
+      const dejaPropose = localStorage.getItem(
+        `pourboire_propose_${emprunt.id}`
+      );
+
+      return emprunt.statut === "RETOURNE" && !dejaPropose;
+    });
+
+    if (empruntRetourne) {
+      setSelectedPourboireEmprunt(empruntRetourne);
+      setShowPourboireModal(true);
+    }
+  }, [emprunts]);
+
+  useEffect(() => {
     loadEmprunts();
   }, []);
+
+  const handleLeavePourboire = () => {
+    if (selectedPourboireEmprunt?.id) {
+      localStorage.setItem(
+        `pourboire_propose_${selectedPourboireEmprunt.id}`,
+        "true"
+      );
+    }
+
+    window.open(BA9CHICH_URL, "_blank");
+
+    setShowPourboireModal(false);
+    setSelectedPourboireEmprunt(null);
+  };
+
+  const handleClosePourboireModal = () => {
+    if (selectedPourboireEmprunt?.id) {
+      localStorage.setItem(
+        `pourboire_propose_${selectedPourboireEmprunt.id}`,
+        "true"
+      );
+    }
+
+    setShowPourboireModal(false);
+    setSelectedPourboireEmprunt(null);
+  };
 
   return (
     <div className="my-loans-page">
@@ -69,6 +118,19 @@ const MesEmprunts = () => {
                 <span className={getEmpruntBadgeClass(emprunt)}>
                   {getEmpruntLabel(emprunt)}
                 </span>
+                {emprunt.statut === "RETOURNE" && (
+                    <div className="pourboire-card-box">
+                      <p>Vous souhaitez soutenir le service ?</p>
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => window.open(BA9CHICH_URL, "_blank")}
+                      >
+                        Laisser un pourboire via Ba9chich
+                      </button>
+                    </div>
+                  )}
               </div>
               {emprunt.probleme_retour && (
                 <div className="client-return-problem-box">
@@ -98,8 +160,42 @@ const MesEmprunts = () => {
             )}
           </div>
         ))}
+         {showPourboireModal && (
+      <div className="pourboire-modal-overlay">
+        <div className="pourboire-modal">
+          <h2>Emprunt clôturé</h2>
+
+          <p>
+            Votre emprunt a été terminé avec succès. Si vous avez apprécié le
+            service, vous pouvez laisser un pourboire volontaire via Ba9chich.
+          </p>
+
+          {selectedPourboireEmprunt && (
+            <div className="pourboire-emprunt-info">
+              <strong>Matériel :</strong>{" "}
+              {selectedPourboireEmprunt.materiels?.nom ||
+                selectedPourboireEmprunt.materiel?.nom ||
+                "Matériel"}
+            </div>
+          )}
+
+          <div className="pourboire-modal-actions">
+            <button onClick={handleLeavePourboire}>
+              Laisser un pourboire
+            </button>
+
+            <button
+              className="secondary-button"
+              onClick={handleClosePourboireModal}
+            >
+              Non merci
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    )}
+      </div>
+      </div>
   );
 };
 
