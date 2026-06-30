@@ -135,7 +135,7 @@ const MesEmprunts = () => {
               {emprunt.probleme_retour && (
                 <div className="client-return-problem-box">
                   <strong>Problème signalé au retour :</strong>
-
+git status
                   <p>
                     <span>Type :</span>{" "}
                     {emprunt.type_probleme_retour || "Non renseigné"}
