@@ -4350,3 +4350,37 @@ a.secondary-button {
 .admin-materiel-qr-actions button {
   min-width: 135px;
 }
+/* =========================
+   FILTRES EMPRUNTS
+   ========================= */
+
+.emprunts-filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 22px 0 26px;
+}
+
+.emprunts-filter-button {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.emprunts-filter-button:hover {
+  background: rgba(255, 122, 0, 0.14);
+  border-color: rgba(255, 122, 0, 0.35);
+  color: #ffb45c;
+}
+
+.emprunts-filter-button.active {
+  background: #ff7a00;
+  border-color: #ff7a00;
+  color: #000000;
+}

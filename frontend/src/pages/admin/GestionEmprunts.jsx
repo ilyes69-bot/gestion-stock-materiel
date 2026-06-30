@@ -14,6 +14,7 @@ import {
 
 const GestionEmprunts = () => {
   const [emprunts, setEmprunts] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("TOUS");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
@@ -195,6 +196,26 @@ const GestionEmprunts = () => {
   if (loading) {
     return <p>Chargement...</p>;
   }
+  const filterOptions = [
+      { value: "TOUS", label: "Tous" },
+      { value: "EN_ATTENTE_VALIDATION", label: "En attente validation" },
+      { value: "VALIDE", label: "Validé" },
+      { value: "EN_COURS", label: "En cours" },
+      {
+        value: "EN_ATTENTE_CONFIRMATION_RETOUR",
+        label: "En attente retour",
+      },
+      { value: "RETOURNE", label: "Retourné" },
+      { value: "REFUSE", label: "Refusé" },
+    ];
+
+    const filteredEmprunts = emprunts.filter((emprunt) => {
+      if (statusFilter === "TOUS") {
+        return true;
+      }
+
+      return emprunt.statut === statusFilter;
+  });
 
   return (
     <div className="admin-emprunts-page">
@@ -207,11 +228,27 @@ const GestionEmprunts = () => {
       </div>
 
       {error && <p className="error-message">{error}</p>}
+      <div className="emprunts-filter-bar">
+          {filterOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={
+                statusFilter === option.value
+                  ? "emprunts-filter-button active"
+                  : "emprunts-filter-button"
+              }
+              onClick={() => setStatusFilter(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
 
-      {emprunts.length === 0 && <p>Aucun emprunt trouvé.</p>}
+      {filteredEmprunts.length === 0 && <p>Aucun emprunt trouvé.</p>}
 
       <div className="emprunts-admin-grid">
-        {emprunts.map((emprunt) => (
+        {filteredEmprunts.map((emprunt) => (
           <div key={emprunt.id} className="emprunt-admin-card">
             <h3>{getMaterielName(emprunt)}</h3>
 
