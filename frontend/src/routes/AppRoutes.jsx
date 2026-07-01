@@ -37,7 +37,14 @@ import WorkerScanner from "../pages/worker/WorkerScanner";
 import WorkerLayout from "../components/layout/WorkerLayout";
 import WorkerEmprunts from "../pages/worker/WorkerEmprunts";
 
+import AjouterMonMateriel from "../pages/client/AjouterMonMateriel";
+import MesMateriels from "../pages/client/MesMateriels";
+
 import Panier from "../pages/client/Panier";
+
+import SuperAdminDashboard from "../pages/superAdmin/SuperAdminDashboard";
+import MaterielsEnAttente from "../pages/superAdmin/MaterielsEnAttente";
+import DemandesRecues from "../pages/client/DemandesRecues";
 
 const AppRoutes = () => {
   return (
@@ -66,8 +73,27 @@ const AppRoutes = () => {
           <Route path="/client/historique" element={<HistoriqueClient />} />
           <Route path="/client/profil" element={<ProfilClient />} />
           <Route path="/client/panier" element={<Panier />} />
+          <Route path="/client/ajouter-materiel" element={<AjouterMonMateriel />} />
+          <Route path="/client/mes-materiels" element={<MesMateriels />} />
+          <Route path="/client/demandes-recues" element={<DemandesRecues />} />
         </Route>
-
+        {/* Routes super_Admin */}
+        <Route
+            path="/super-admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <SuperAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/materiels-en-attente"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <MaterielsEnAttente />
+              </ProtectedRoute>
+            }
+          />
         {/* Routes Admin */}
         <Route
           element={

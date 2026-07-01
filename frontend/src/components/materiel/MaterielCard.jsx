@@ -64,6 +64,16 @@ const MaterielCard = ({ materiel }) => {
         </p>
       </div>
 
+      {materiel.proprietaire_type === "UTILISATEUR" ? (
+          <span className="owner-type-badge user-owner">
+            Matériel utilisateur
+          </span>
+        ) : (
+          <span className="owner-type-badge company-owner">
+            Matériel société
+          </span>
+      )}
+
       <div className="catalogue-actions">
         <Link className="button-link" to={`/client/materiel/${materiel.id}`}>
           Voir détail

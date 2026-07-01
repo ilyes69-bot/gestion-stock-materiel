@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getMateriels } from "../../services/materielService";
 import MaterielCard from "../../components/materiel/MaterielCard";
+import { getCatalogueMateriels } from "../../services/clientMaterielService";
 
 const Catalogue = () => {
   const [materiels, setMateriels] = useState([]);
@@ -10,8 +11,8 @@ const Catalogue = () => {
 
   const loadMateriels = async () => {
     try {
-      const data = await getMateriels();
-      setMateriels(data);
+      const data = await getCatalogueMateriels();
+      setMateriels(Array.isArray(data) ? data : []);
     } catch (err) {
       setError("Erreur lors du chargement des matériels");
     } finally {

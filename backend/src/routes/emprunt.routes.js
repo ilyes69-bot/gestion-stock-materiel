@@ -5,8 +5,6 @@ const {
   create,
   getMine,
   getAll,
-  validate,
-  damage,
   validerDemande,
   refuserDemande,
   confirmerRetourNormal,
@@ -16,11 +14,31 @@ const {
 const authMiddleware = require("../middlewares/auth.middleware");
 const roleMiddleware = require("../middlewares/role.middleware");
 
-router.post("/", authMiddleware, roleMiddleware("client"), create);
+// Client : créer une demande d'emprunt
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware("client"),
+  create
+);
 
-router.get("/me", authMiddleware, roleMiddleware("client"), getMine);
+// Client : voir ses emprunts
+router.get(
+  "/me",
+  authMiddleware,
+  roleMiddleware("client"),
+  getMine
+);
 
-router.get("/", authMiddleware, roleMiddleware("admin"), getAll);
+// Admin société : voir tous les emprunts
+router.get(
+  "/",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getAll
+);
+
+// Admin société : valider une demande société
 router.put(
   "/:id/valider-demande",
   authMiddleware,
@@ -28,6 +46,7 @@ router.put(
   validerDemande
 );
 
+// Admin société : refuser une demande société
 router.put(
   "/:id/refuser-demande",
   authMiddleware,
@@ -35,6 +54,7 @@ router.put(
   refuserDemande
 );
 
+// Admin société : confirmer retour normal final
 router.put(
   "/:id/confirmer-retour-normal",
   authMiddleware,
@@ -42,6 +62,7 @@ router.put(
   confirmerRetourNormal
 );
 
+// Admin société : confirmer retour avec problème
 router.put(
   "/:id/confirmer-retour-endommage",
   authMiddleware,
@@ -49,9 +70,36 @@ router.put(
   confirmerRetourEndommage
 );
 
+/*
+  Anciennes routes gardées pour éviter de casser le frontend
+*/
 
-router.put("/:id/retour-valide", authMiddleware, roleMiddleware("admin"), validate);
+router.put(
+  "/:id/validate-return",
+  authMiddleware,
+  roleMiddleware("admin"),
+  confirmerRetourNormal
+);
 
-router.put("/:id/endommage", authMiddleware, roleMiddleware("admin"), damage);
+router.put(
+  "/:id/mark-damaged",
+  authMiddleware,
+  roleMiddleware("admin"),
+  confirmerRetourEndommage
+);
+
+router.put(
+  "/:id/valider-retour",
+  authMiddleware,
+  roleMiddleware("admin"),
+  confirmerRetourNormal
+);
+
+router.put(
+  "/:id/signaler-endommage",
+  authMiddleware,
+  roleMiddleware("admin"),
+  confirmerRetourEndommage
+);
 
 module.exports = router;

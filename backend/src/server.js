@@ -11,7 +11,8 @@ const historiqueRoutes = require("./routes/historique.routes");
 const userRoutes = require("./routes/user.routes");
 const app = express();
 const workerRoutes = require("./routes/worker.routes");
-
+const clientMaterielRoutes = require("./routes/clientMateriel.routes");
+const proprietaireEmpruntRoutes = require("./routes/proprietaireEmprunt.routes");
 
 app.use(cors());
 app.use(express.json());
@@ -31,6 +32,8 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/historique", historiqueRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/worker", workerRoutes);
+app.use("/api/client-materiels", clientMaterielRoutes);
+app.use("/api/proprietaire-emprunts", proprietaireEmpruntRoutes);
 
 const PORT = process.env.PORT || 5000;
 

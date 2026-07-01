@@ -1,9 +1,7 @@
 const {
   createEmprunt,
-  getMesEmprunts,
+  getEmpruntsByClient,
   getAllEmprunts,
-  validateReturn,
-  markAsDamaged,
   validerDemandeEmprunt,
   refuserDemandeEmprunt,
   confirmerRetourNormalFinal,
@@ -15,10 +13,11 @@ const create = async (req, res) => {
     const emprunt = await createEmprunt(req.user.id, req.body);
 
     res.status(201).json({
-      message: "Emprunt créé avec succès",
+      message: "Demande d'emprunt créée avec succès.",
       emprunt,
     });
   } catch (error) {
+    console.log("ERREUR CREATE EMPRUNT:", error);
     res.status(error.status || 500).json({
       message: error.message || "Erreur serveur",
     });
@@ -27,12 +26,13 @@ const create = async (req, res) => {
 
 const getMine = async (req, res) => {
   try {
-    const emprunts = await getMesEmprunts(req.user.id);
+    const emprunts = await getEmpruntsByClient(req.user.id);
 
     res.status(200).json({
       emprunts,
     });
   } catch (error) {
+    console.log("ERREUR GET MINE EMPRUNTS:", error);
     res.status(error.status || 500).json({
       message: error.message || "Erreur serveur",
     });
@@ -47,50 +47,23 @@ const getAll = async (req, res) => {
       emprunts,
     });
   } catch (error) {
+    console.log("ERREUR GET ALL EMPRUNTS:", error);
     res.status(error.status || 500).json({
       message: error.message || "Erreur serveur",
     });
   }
 };
 
-const validate = async (req, res) => {
-  try {
-    const emprunt = await validateReturn(req.params.id, req.user.id);
-
-    res.status(200).json({
-      message: "Retour validé avec succès",
-      emprunt,
-    });
-  } catch (error) {
-    res.status(error.status || 500).json({
-      message: error.message || "Erreur serveur",
-    });
-  }
-};
-
-const damage = async (req, res) => {
-  try {
-    const emprunt = await markAsDamaged(req.params.id, req.body, req.user.id);
-
-    res.status(200).json({
-      message: "Matériel signalé comme endommagé",
-      emprunt,
-    });
-  } catch (error) {
-    res.status(error.status || 500).json({
-      message: error.message || "Erreur serveur",
-    });
-  }
-};
 const validerDemande = async (req, res) => {
   try {
-    const emprunt = await validerDemandeEmprunt(req.params.id, req.user.id);
+    const emprunt = await validerDemandeEmprunt(req.user.id, req.params.id);
 
     res.status(200).json({
-      message: "Demande d'emprunt validée avec succès",
+      message: "Demande validée avec succès.",
       emprunt,
     });
   } catch (error) {
+    console.log("ERREUR VALIDER DEMANDE:", error);
     res.status(error.status || 500).json({
       message: error.message || "Erreur serveur",
     });
@@ -99,13 +72,14 @@ const validerDemande = async (req, res) => {
 
 const refuserDemande = async (req, res) => {
   try {
-    const emprunt = await refuserDemandeEmprunt(req.params.id, req.user.id);
+    const emprunt = await refuserDemandeEmprunt(req.user.id, req.params.id);
 
     res.status(200).json({
-      message: "Demande d'emprunt refusée avec succès",
+      message: "Demande refusée avec succès.",
       emprunt,
     });
   } catch (error) {
+    console.log("ERREUR REFUSER DEMANDE:", error);
     res.status(error.status || 500).json({
       message: error.message || "Erreur serveur",
     });
@@ -114,16 +88,14 @@ const refuserDemande = async (req, res) => {
 
 const confirmerRetourNormal = async (req, res) => {
   try {
-    const emprunt = await confirmerRetourNormalFinal(
-      req.params.id,
-      req.user.id
-    );
+    const emprunt = await confirmerRetourNormalFinal(req.user.id, req.params.id);
 
     res.status(200).json({
-      message: "Retour normal confirmé avec succès",
+      message: "Retour normal confirmé avec succès.",
       emprunt,
     });
   } catch (error) {
+    console.log("ERREUR CONFIRMER RETOUR NORMAL:", error);
     res.status(error.status || 500).json({
       message: error.message || "Erreur serveur",
     });
@@ -133,29 +105,48 @@ const confirmerRetourNormal = async (req, res) => {
 const confirmerRetourEndommage = async (req, res) => {
   try {
     const emprunt = await confirmerRetourEndommageFinal(
+      req.user.id,
       req.params.id,
-      req.body,
-      req.user.id
+      req.body
     );
 
     res.status(200).json({
-      message: "Retour endommagé confirmé avec succès",
+      message: "Retour endommagé confirmé avec succès.",
       emprunt,
     });
   } catch (error) {
+    console.log("ERREUR CONFIRMER RETOUR ENDOMMAGE:", error);
     res.status(error.status || 500).json({
       message: error.message || "Erreur serveur",
     });
   }
 };
+
 module.exports = {
   create,
   getMine,
   getAll,
-  validate,
-  damage,
   validerDemande,
   refuserDemande,
   confirmerRetourNormal,
   confirmerRetourEndommage,
+
+  // Aliases pour éviter les erreurs avec tes anciennes routes
+  createEmprunt: create,
+  getMyEmprunts: getMine,
+  getMesEmprunts: getMine,
+  getClientEmprunts: getMine,
+  getEmpruntsByClient: getMine,
+  getAllEmprunts: getAll,
+
+  validerDemandeEmprunt: validerDemande,
+  refuserDemandeEmprunt: refuserDemande,
+
+  confirmerRetourNormalFinal: confirmerRetourNormal,
+  confirmerRetourEndommageFinal: confirmerRetourEndommage,
+
+  validateReturn: confirmerRetourNormal,
+  markAsDamaged: confirmerRetourEndommage,
+  validerRetour: confirmerRetourNormal,
+  signalerEndommage: confirmerRetourEndommage,
 };
