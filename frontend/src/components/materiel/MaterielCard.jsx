@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { addToPanier } from "../../utils/panier";
+import { useAuth } from "../../context/AuthContext";
 
 const MaterielCard = ({ materiel }) => {
   const getStatutClass = () => {
@@ -28,6 +29,10 @@ const MaterielCard = ({ materiel }) => {
       toast.error(result.message);
     }
   };
+  const { user } = useAuth();
+  const isMyMaterial =
+  materiel.proprietaire_type === "UTILISATEUR" &&
+  materiel.owner_user_id === user?.id;
 
   return (
     <div className="catalogue-card">
@@ -79,16 +84,25 @@ const MaterielCard = ({ materiel }) => {
           Voir détail
         </Link>
       </div>
-      {materiel.statut === "DISPONIBLE" && materiel.etat === "BON_ETAT" && (
+      {isMyMaterial ? (
         <div className="materiel-card-actions">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={handleAddToPanier}
-          >
-            Ajouter au panier
+          <button type="button" className="secondary-button" disabled>
+            Votre matériel
           </button>
         </div>
+      ) : (
+        materiel.statut === "DISPONIBLE" &&
+        materiel.etat === "BON_ETAT" && (
+          <div className="materiel-card-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleAddToPanier}
+            >
+              Ajouter au panier
+            </button>
+          </div>
+        )
       )}
     </div>
   );

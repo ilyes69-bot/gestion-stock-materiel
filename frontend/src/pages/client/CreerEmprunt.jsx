@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createEmprunt } from "../../services/empruntService";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
 
 const CreerEmprunt = () => {
   const { materielId } = useParams();
@@ -14,6 +15,11 @@ const CreerEmprunt = () => {
   const [loading, setLoading] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
+  const { user } = useAuth();
+
+  const isMyMaterial =
+  materiel?.proprietaire_type === "UTILISATEUR" &&
+  materiel?.owner_user_id === user?.id;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,7 +70,16 @@ const CreerEmprunt = () => {
       setLoading(false);
     }
   };
-
+ if (isMyMaterial) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <h1>Emprunt impossible</h1>
+          <p>Vous ne pouvez pas emprunter votre propre matériel.</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="borrow-page">
       <div className="borrow-container">

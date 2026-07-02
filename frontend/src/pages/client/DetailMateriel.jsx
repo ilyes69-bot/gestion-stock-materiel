@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getMaterielById } from "../../services/materielService";
+import { useAuth } from "../../context/AuthContext";
 
 const DetailMateriel = () => {
   const { id } = useParams();
@@ -42,6 +43,10 @@ const DetailMateriel = () => {
   if (error) {
     return <p className="error-message">{error}</p>;
   }
+  const { user } = useAuth();
+  const isMyMaterial =
+  materiel?.proprietaire_type === "UTILISATEUR" &&
+  materiel?.owner_user_id === user?.id;
 
   return (
     <div className="detail-page">
@@ -74,8 +79,15 @@ const DetailMateriel = () => {
         </div>
 
         <div className="detail-actions">
-          {materiel.statut === "DISPONIBLE" && materiel.etat === "BON_ETAT" ? (
-            <Link className="button-link" to={`/client/emprunt/${materiel.id}`}>
+          {isMyMaterial ? (
+            <button type="button" className="secondary-button" disabled>
+              Votre matériel
+            </button>
+          ) : materiel.statut === "DISPONIBLE" && materiel.etat === "BON_ETAT" ? (
+            <Link
+              to={`/client/emprunt/${materiel.id}`}
+              className="primary-button"
+            >
               Emprunter ce matériel
             </Link>
           ) : (
