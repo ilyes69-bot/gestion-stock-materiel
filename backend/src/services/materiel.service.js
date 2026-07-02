@@ -29,9 +29,10 @@ const uploadMaterielImage = async (file) => {
 
 const getAllMateriels = async () => {
   const { data, error } = await supabase
-    .from("materiels")
-    .select("*")
-    .order("created_at", { ascending: false });
+  .from("materiels")
+  .select("*")
+  .eq("proprietaire_type", "SOCIETE")
+  .order("created_at", { ascending: false });
 
   if (error) {
     const err = new Error("Erreur lors du chargement des matériels");
