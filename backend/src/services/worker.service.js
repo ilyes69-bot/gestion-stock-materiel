@@ -1,220 +1,221 @@
 const supabase = require("../config/supabase");
 
-const todayDate = () => {
-  return new Date().toISOString().split("T")[0];
+const enrichEmprunts = async (emprunts) => {
+  if (!emprunts || emprunts.length === 0) return [];
+
+  const clientIds = [...new Set(emprunts.map((e) => e.client_id).filter(Boolean))];
+  const materielIds = [...new Set(emprunts.map((e) => e.materiel_id).filter(Boolean))];
+
+  const { data: clients, error: clientsError } = await supabase
+    .from("users")
+    .select("id, nom, prenom, email")
+    .in("id", clientIds);
+
+  if (clientsError) {
+    console.log("Erreur enrichEmprunts clients:", clientsError);
+  }
+
+  const { data: materiels, error: materielsError } = await supabase
+    .from("materiels")
+    .select("*")
+    .in("id", materielIds);
+
+  if (materielsError) {
+    console.log("Erreur enrichEmprunts materiels:", materielsError);
+  }
+
+  const clientsMap = {};
+  (clients || []).forEach((client) => {
+    clientsMap[client.id] = client;
+  });
+
+  const materielsMap = {};
+  (materiels || []).forEach((materiel) => {
+    materielsMap[materiel.id] = materiel;
+  });
+
+  return emprunts.map((emprunt) => ({
+    ...emprunt,
+    client: clientsMap[emprunt.client_id] || null,
+    materiel: materielsMap[emprunt.materiel_id] || null,
+  }));
 };
 
-const nowDateTime = () => {
-  return new Date().toISOString();
+const getWorkerEmprunts = async () => {
+  const { data: emprunts, error } = await supabase
+    .from("emprunts")
+    .select("*")
+    .eq("type_emprunt", "SOCIETE")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log("Erreur getWorkerEmprunts:", error);
+
+    const err = new Error("Erreur lors du chargement des emprunts travailleur");
+    err.status = 500;
+    throw err;
+  }
+
+  return enrichEmprunts(emprunts || []);
 };
 
-const getMaterielByQrToken = async (qrToken) => {
+const scanMaterielByQr = async (qrToken) => {
   const { data: materiel, error: materielError } = await supabase
     .from("materiels")
     .select("*")
     .eq("qr_token", qrToken)
     .single();
-    const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-    if (!qrToken || !uuidRegex.test(qrToken)) {
-    const error = new Error("QR code invalide ou incomplet");
-    error.status = 400;
-    throw error;
-    }
 
   if (materielError || !materiel) {
-    const error = new Error("Matériel introuvable avec ce QR code");
+    const error = new Error("Matériel introuvable");
     error.status = 404;
     throw error;
   }
 
-  const { data: emprunt, error: empruntError } = await supabase
-    .from("emprunts")
-    .select(`
-      *,
-      client:users!emprunts_client_id_fkey (
-        id,
-        nom,
-        prenom,
-        email
-        ),  
-      materiels (
-        id,
-        nom,
-        description,
-        categorie,
-        statut,
-        etat,
-        image_url,
-        qr_token
-      )
-    `)
-    .eq("materiel_id", materiel.id)
-    .in("statut", [
-    "EN_ATTENTE_VALIDATION",
-    "VALIDE",
-    "EN_COURS",
-    "EN_ATTENTE_CONFIRMATION_RETOUR",
-    ])
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (empruntError) {
-    const error = new Error("Erreur lors de la recherche de l'emprunt");
-    error.status = 500;
-    throw error;
-  }
-
-  return {
-    materiel,
-    emprunt: emprunt || null,
-  };
-};
-
-const confirmerSortie = async (empruntId, workerId) => {
-  const { data: emprunt, error: empruntError } = await supabase
-    .from("emprunts")
-    .select(`
-      *,
-      client:users!emprunts_client_id_fkey (
-        id,
-        nom,
-        prenom,
-        email
-      ),
-      materiels (
-        id,
-        nom,
-        statut,
-        etat
-      )
-    `)
-    .eq("id", empruntId)
-    .single();
-
-  if (empruntError || !emprunt) {
-    const error = new Error("Emprunt introuvable");
-    error.status = 404;
-    throw error;
-  }
-
-  if (emprunt.statut !== "VALIDE") {
+  if (materiel.proprietaire_type !== "SOCIETE") {
     const error = new Error(
-      "La sortie peut être confirmée seulement après validation par l'administrateur"
+      "Ce matériel appartient à un utilisateur. Il ne peut pas être géré par un travailleur."
     );
     error.status = 400;
     throw error;
   }
 
-  if (emprunt.sortie_confirmee) {
-    const error = new Error("La sortie de ce matériel est déjà confirmée");
+  const { data: emprunts, error: empruntError } = await supabase
+    .from("emprunts")
+    .select("*")
+    .eq("materiel_id", materiel.id)
+    .eq("type_emprunt", "SOCIETE")
+    .in("statut", ["VALIDE", "EN_COURS", "EN_ATTENTE_CONFIRMATION_RETOUR"])
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (empruntError) {
+    console.log("Erreur scanMaterielByQr emprunt:", empruntError);
+
+    const error = new Error("Erreur lors du chargement de l'emprunt lié");
+    error.status = 500;
+    throw error;
+  }
+
+  let emprunt = emprunts && emprunts.length > 0 ? emprunts[0] : null;
+
+  if (emprunt) {
+    const enriched = await enrichEmprunts([emprunt]);
+    emprunt = enriched[0];
+  }
+
+  return {
+    materiel,
+    emprunt,
+  };
+};
+
+const confirmerSortie = async (workerId, empruntId) => {
+  const { data: emprunt, error: empruntError } = await supabase
+    .from("emprunts")
+    .select("*")
+    .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .single();
+
+  if (empruntError || !emprunt) {
+    const error = new Error("Emprunt société introuvable");
+    error.status = 404;
+    throw error;
+  }
+
+  if (emprunt.statut !== "VALIDE") {
+    const error = new Error("La sortie ne peut être confirmée que pour un emprunt validé");
     error.status = 400;
     throw error;
   }
 
-  const { data: updatedEmprunt, error: updateError } = await supabase
+  const { data: updatedEmprunt, error } = await supabase
     .from("emprunts")
     .update({
       statut: "EN_COURS",
       sortie_confirmee: true,
-      date_sortie_effective: nowDateTime(),
+      date_sortie_effective: new Date().toISOString(),
       sortie_par: workerId,
-      updated_at: nowDateTime(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
     .select()
     .single();
 
-  if (updateError) {
-    const error = new Error("Erreur lors de la confirmation de sortie");
-    error.status = 500;
-    throw error;
+  if (error) {
+    console.log("Erreur confirmerSortie:", error);
+
+    const err = new Error("Erreur lors de la confirmation de sortie");
+    err.status = 500;
+    throw err;
   }
 
   await supabase
     .from("materiels")
     .update({
       statut: "EMPRUNTE",
-      updated_at: nowDateTime(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", emprunt.materiel_id);
-
-  await supabase.from("notifications").insert({
-    user_id: emprunt.client_id,
-    contenu: `La sortie du matériel ${emprunt.materiels?.nom || ""} a été confirmée.`,
-    type: "SORTIE_MATERIEL",
-    lu: false,
-  });
 
   await supabase.from("historique_actions").insert({
     user_id: workerId,
     materiel_id: emprunt.materiel_id,
-    emprunt_id: emprunt.id,
-    type_action: "CONFIRMATION_SORTIE",
-    description: `Sortie confirmée par le travailleur pour le matériel ${emprunt.materiels?.nom || ""}.`,
+    emprunt_id: empruntId,
+    type_action: "SORTIE_MATERIEL_CONFIRMEE",
+    description: "Le travailleur a confirmé la sortie du matériel société.",
+  });
+
+  await supabase.from("notifications").insert({
+    user_id: emprunt.client_id,
+    contenu: "La sortie de votre matériel a été confirmée.",
+    type: "SORTIE_MATERIEL",
   });
 
   return updatedEmprunt;
 };
 
-const validerRetourNormal = async (empruntId, workerId) => {
+const retourNormal = async (workerId, empruntId) => {
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
-    .select(`
-      *,
-      client:users!emprunts_client_id_fkey (
-        id,
-        nom,
-        prenom,
-        email
-      ),
-      materiels (
-        id,
-        nom
-      )
-    `)
+    .select("*")
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt introuvable");
+    const error = new Error("Emprunt société introuvable");
     error.status = 404;
     throw error;
   }
 
   if (emprunt.statut !== "EN_COURS") {
-    const error = new Error("Le retour peut être déclaré seulement pour un emprunt en cours");
+    const error = new Error("Le retour ne peut être déclaré que pour un emprunt en cours");
     error.status = 400;
     throw error;
   }
 
-  if (!emprunt.sortie_confirmee) {
-    const error = new Error("La sortie doit être confirmée avant de déclarer le retour");
-    error.status = 400;
-    throw error;
-  }
-
-  const { data: updatedEmprunt, error: updateError } = await supabase
+  const { data: updatedEmprunt, error } = await supabase
     .from("emprunts")
     .update({
       statut: "EN_ATTENTE_CONFIRMATION_RETOUR",
-      date_retour_effective: todayDate(),
       retour_par: workerId,
       probleme_retour: false,
       type_probleme_retour: null,
       commentaire_retour: null,
-      updated_at: nowDateTime(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
     .select()
     .single();
 
-  if (updateError) {
-    const error = new Error("Erreur lors de la déclaration du retour");
-    error.status = 500;
-    throw error;
+  if (error) {
+    console.log("Erreur retourNormal:", error);
+
+    const err = new Error("Erreur lors de la déclaration du retour normal");
+    err.status = 500;
+    throw err;
   }
 
   await supabase
@@ -222,94 +223,69 @@ const validerRetourNormal = async (empruntId, workerId) => {
     .update({
       statut: "INDISPONIBLE",
       etat: "BON_ETAT",
-      updated_at: nowDateTime(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", emprunt.materiel_id);
-
-  await supabase.from("notifications").insert({
-    user_id: emprunt.client_id,
-    contenu: `Le retour du matériel ${emprunt.materiels?.nom || ""} a été déclaré en bon état. Il attend la confirmation de l'administrateur.`,
-    type: "RETOUR_DECLARE",
-    lu: false,
-  });
 
   await supabase.from("historique_actions").insert({
     user_id: workerId,
     materiel_id: emprunt.materiel_id,
-    emprunt_id: emprunt.id,
-    type_action: "DECLARATION_RETOUR_NORMAL",
-    description: `Retour normal déclaré par le travailleur pour le matériel ${emprunt.materiels?.nom || ""}.`,
+    emprunt_id: empruntId,
+    type_action: "RETOUR_NORMAL_TRAVAILLEUR",
+    description: "Le travailleur a déclaré un retour normal.",
+  });
+
+  await supabase.from("notifications").insert({
+    user_id: emprunt.client_id,
+    contenu: "Le retour de votre matériel a été déclaré comme normal.",
+    type: "RETOUR_NORMAL",
   });
 
   return updatedEmprunt;
 };
 
-const validerRetourProbleme = async (empruntId, data, workerId) => {
-  const { type_probleme_retour, commentaire_retour } = data;
-
-  if (!commentaire_retour || commentaire_retour.trim() === "") {
-    const error = new Error("Le commentaire du problème est obligatoire");
-    error.status = 400;
-    throw error;
-  }
+const retourProbleme = async (workerId, empruntId, dataRetour = {}) => {
+  const { type_probleme_retour, commentaire_retour } = dataRetour;
 
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
-    .select(`
-      *,
-      client:users!emprunts_client_id_fkey (
-        id,
-        nom,
-        prenom,
-        email
-      ),
-      materiels (
-        id,
-        nom
-      )
-    `)
+    .select("*")
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt introuvable");
+    const error = new Error("Emprunt société introuvable");
     error.status = 404;
     throw error;
   }
 
   if (emprunt.statut !== "EN_COURS") {
-    const error = new Error("Le retour peut être déclaré seulement pour un emprunt en cours");
+    const error = new Error("Le retour ne peut être déclaré que pour un emprunt en cours");
     error.status = 400;
     throw error;
   }
 
-  if (!emprunt.sortie_confirmee) {
-    const error = new Error("La sortie doit être confirmée avant de déclarer le retour");
-    error.status = 400;
-    throw error;
-  }
-
-  const typeProbleme = type_probleme_retour || "Matériel endommagé";
-
-  const { data: updatedEmprunt, error: updateError } = await supabase
+  const { data: updatedEmprunt, error } = await supabase
     .from("emprunts")
     .update({
       statut: "EN_ATTENTE_CONFIRMATION_RETOUR",
-      date_retour_effective: todayDate(),
       retour_par: workerId,
       probleme_retour: true,
-      type_probleme_retour: typeProbleme,
-      commentaire_retour: commentaire_retour.trim(),
-      updated_at: nowDateTime(),
+      type_probleme_retour: type_probleme_retour || "ENDOMMAGE",
+      commentaire_retour: commentaire_retour || "Matériel retourné avec problème.",
+      updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
     .select()
     .single();
 
-  if (updateError) {
-    const error = new Error("Erreur lors de la déclaration du problème");
-    error.status = 500;
-    throw error;
+  if (error) {
+    console.log("Erreur retourProbleme:", error);
+
+    const err = new Error("Erreur lors de la déclaration du retour avec problème");
+    err.status = 500;
+    throw err;
   }
 
   await supabase
@@ -317,65 +293,51 @@ const validerRetourProbleme = async (empruntId, data, workerId) => {
     .update({
       statut: "INDISPONIBLE",
       etat: "ENDOMMAGE",
-      updated_at: nowDateTime(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", emprunt.materiel_id);
-
-  await supabase.from("notifications").insert({
-    user_id: emprunt.client_id,
-    contenu: `Le retour du matériel ${emprunt.materiels?.nom || ""} a été déclaré avec un problème. Commentaire : ${commentaire_retour.trim()}`,
-    type: "RETOUR_PROBLEME_DECLARE",
-    lu: false,
-  });
 
   await supabase.from("historique_actions").insert({
     user_id: workerId,
     materiel_id: emprunt.materiel_id,
-    emprunt_id: emprunt.id,
-    type_action: "DECLARATION_RETOUR_PROBLEME",
-    description: `Retour avec problème déclaré par le travailleur pour le matériel ${emprunt.materiels?.nom || ""}. Type : ${typeProbleme}. Commentaire : ${commentaire_retour.trim()}`,
+    emprunt_id: empruntId,
+    type_action: "RETOUR_PROBLEME_TRAVAILLEUR",
+    description: "Le travailleur a déclaré un retour avec problème.",
+  });
+
+  await supabase.from("notifications").insert({
+    user_id: emprunt.client_id,
+    contenu: "Le retour de votre matériel a été déclaré avec un problème.",
+    type: "RETOUR_PROBLEME",
   });
 
   return updatedEmprunt;
 };
-    const getAllEmpruntsWorker = async () => {
-    const { data, error } = await supabase
-        .from("emprunts")
-        .select(`
-        *,
-        client:users!emprunts_client_id_fkey (
-            id,
-            nom,
-            prenom,
-            email
-        ),
-        materiels (
-            id,
-            nom,
-            description,
-            categorie,
-            statut,
-            etat,
-            image_url,
-            qr_token
-        )
-        `)
-        .order("created_at", { ascending: false });
 
-    if (error) {
-        console.log("Erreur getAllEmpruntsWorker:", error);
-
-        const err = new Error("Erreur lors du chargement des emprunts");
-        err.status = 500;
-        throw err;
-    }
-
-    return data;
-    };
 module.exports = {
-  getMaterielByQrToken,
+  getWorkerEmprunts,
+  scanMaterielByQr,
   confirmerSortie,
-  validerRetourNormal,
-  validerRetourProbleme,
-  getAllEmpruntsWorker,
+  retourNormal,
+  retourProbleme,
+
+  // Aliases pour éviter les erreurs si ton controller utilise d'anciens noms
+  getEmpruntsWorker: getWorkerEmprunts,
+  getAllWorkerEmprunts: getWorkerEmprunts,
+  getAllEmpruntsWorker: getWorkerEmprunts,
+
+  scanMateriel: scanMaterielByQr,
+  scanQrCode: scanMaterielByQr,
+  scanByQrToken: scanMaterielByQr,
+  getMaterielByQrToken: scanMaterielByQr,
+
+  confirmerSortieMateriel: confirmerSortie,
+  confirmSortie: confirmerSortie,
+  confirmHandover: confirmerSortie,
+
+  confirmerRetourNormal: retourNormal,
+  confirmReturnNormal: retourNormal,
+
+  confirmerRetourProbleme: retourProbleme,
+  confirmReturnProblem: retourProbleme,
 };
