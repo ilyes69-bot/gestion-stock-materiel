@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   getMaterielsClientsEnAttente,
@@ -60,6 +61,9 @@ const MaterielsEnAttente = () => {
   return (
     <div className="super-admin-page">
       <div className="page-header">
+        <Link to="/super-admin/dashboard" className="super-admin-back-btn">
+          ← Retour dashboard
+        </Link>
         <h1>Matériels utilisateurs en attente</h1>
         <p>
           Validez ou refusez les matériels proposés par les utilisateurs avant

@@ -5799,3 +5799,16 @@ a.secondary-button {
     text-align: center !important;
   }
 }
+.super-admin-back-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-bottom: 16px !important;
+  color: #f97316 !important;
+  text-decoration: none !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+}
+
+.super-admin-back-btn:hover {
+  color: #fb923c !important;
+}

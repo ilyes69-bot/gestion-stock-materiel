@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import {
+import {  
   getToutesSocietes,
   approuverSociete,
   refuserSociete,
@@ -88,6 +89,9 @@ const GestionSocietes = () => {
   return (
     <div className="super-admin-page">
       <div className="page-header">
+        <Link to="/super-admin/dashboard" className="super-admin-back-btn">
+          ← Retour dashboard
+        </Link>
         <h1>Gestion des sociétés</h1>
         <p>
           Retrouvez ici les demandes de création de sociétés et les sociétés
