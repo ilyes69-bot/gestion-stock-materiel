@@ -26,10 +26,12 @@ const SuperAdminDashboard = () => {
           </Link>
         </div>
 
-        <div className="super-admin-card">
+       <div className="super-admin-card">
           <h2>Utilisateurs</h2>
           <p>Voir les utilisateurs de la plateforme et gérer les abus.</p>
-          <button disabled>À venir</button>
+          <Link to="/super-admin/utilisateurs">
+            Gérer les utilisateurs
+          </Link>
         </div>
 
         <div className="super-admin-card">

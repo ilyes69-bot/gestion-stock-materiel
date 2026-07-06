@@ -22,6 +22,7 @@ const SuperAdminLayout = () => {
           <nav className="super-admin-menu">
             <NavLink to="/super-admin/dashboard">🏠 Dashboard</NavLink>
             <NavLink to="/super-admin/societes">🏢 Sociétés</NavLink>
+            <NavLink to="/super-admin/utilisateurs">👥 Utilisateurs</NavLink>
             <NavLink to="/super-admin/materiels-en-attente">
               📦 Matériels utilisateurs
             </NavLink>

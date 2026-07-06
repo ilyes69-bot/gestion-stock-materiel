@@ -5812,3 +5812,56 @@ a.secondary-button {
 .super-admin-back-btn:hover {
   color: #fb923c !important;
 }
+.super-admin-table-wrapper {
+  width: 100% !important;
+  overflow-x: auto !important;
+  background: #151c2e !important;
+  border-radius: 20px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.super-admin-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  color: #e5e7eb !important;
+}
+
+.super-admin-table th,
+.super-admin-table td {
+  padding: 14px 12px !important;
+  text-align: left !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  font-size: 14px !important;
+}
+
+.super-admin-table th {
+  color: #94a3b8 !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  font-size: 12px !important;
+}
+
+.super-admin-table td strong {
+  color: #ffffff !important;
+}
+
+.super-admin-small-btn {
+  border: none !important;
+  background: #22c55e !important;
+  color: #052e16 !important;
+  padding: 9px 12px !important;
+  border-radius: 10px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+}
+
+.super-admin-small-btn.danger {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.super-admin-muted-action {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+}

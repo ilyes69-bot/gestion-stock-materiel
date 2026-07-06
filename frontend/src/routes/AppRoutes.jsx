@@ -50,6 +50,7 @@ import DemanderSociete from "../pages/client/DemanderSociete";
 import GestionSocietes from "../pages/superAdmin/GestionSocietes";
 import GestionTravailleurs from "../pages/admin/GestionTravailleurs";
 import SuperAdminLayout from "../components/layout/SuperAdminLayout";
+import GestionUtilisateursSuperAdmin from "../pages/superAdmin/GestionUtilisateursSuperAdmin";    
 
 
 const AppRoutes = () => {
@@ -97,6 +98,7 @@ const AppRoutes = () => {
               <Route path="dashboard" element={<SuperAdminDashboard />} />
               <Route path="societes" element={<GestionSocietes />} />
               <Route path="materiels-en-attente" element={<MaterielsEnAttente />} />
+              <Route path="utilisateurs" element={<GestionUtilisateursSuperAdmin />} />
             </Route>  
         {/* Routes Admin */}
           <Route
