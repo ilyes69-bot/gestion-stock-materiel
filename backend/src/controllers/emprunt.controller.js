@@ -41,7 +41,7 @@ const getMine = async (req, res) => {
 
 const getAll = async (req, res) => {
   try {
-    const emprunts = await getAllEmprunts();
+    const emprunts = await getAllEmprunts(req.user.id);
 
     res.status(200).json({
       emprunts,

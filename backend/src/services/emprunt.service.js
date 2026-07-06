@@ -1,5 +1,27 @@
 const supabase = require("../config/supabase");
 
+const getAdminSocieteId = async (adminId) => {
+  const { data: admin, error } = await supabase
+    .from("users")
+    .select("id, role, societe_id")
+    .eq("id", adminId)
+    .single();
+
+  if (error || !admin) {
+    const err = new Error("Admin introuvable");
+    err.status = 404;
+    throw err;
+  }
+
+  if (admin.role !== "admin" || !admin.societe_id) {
+    const err = new Error("Vous n'êtes pas rattaché à une société");
+    err.status = 403;
+    throw err;
+  }
+
+  return admin.societe_id;
+};
+
 const verifierDates = (dateDebut, dateFin) => {
   if (!dateDebut || !dateFin) {
     const error = new Error("Les dates de début et de fin sont obligatoires");
@@ -97,6 +119,7 @@ const createEmprunt = async (clientId, data) => {
       statut: statutEmprunt,
       type_emprunt: typeEmprunt,
       proprietaire_user_id: proprietaireUserId,
+      societe_id:materiel.proprietaire_type === "SOCIETE" ? materiel.societe_id : null,
     })
     .select()
     .single();
@@ -181,17 +204,20 @@ const getEmpruntsByClient = async (clientId) => {
   }));
 };
 
-const getAllEmprunts = async () => {
+const getAllEmprunts = async (adminId) => {
+  const societeId = await getAdminSocieteId(adminId);
+
   const { data: emprunts, error } = await supabase
     .from("emprunts")
     .select("*")
     .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.log("Erreur getAllEmprunts emprunts:", error);
+    console.log("Erreur getAllEmprunts:", error);
 
-    const err = new Error("Erreur lors du chargement des emprunts société");
+    const err = new Error("Erreur lors du chargement des emprunts");
     err.status = 500;
     throw err;
   }
@@ -200,50 +226,62 @@ const getAllEmprunts = async () => {
     return [];
   }
 
-  const clientIds = emprunts.map((e) => e.client_id);
-  const materielIds = emprunts.map((e) => e.materiel_id);
+  const clientIds = [
+    ...new Set(emprunts.map((emprunt) => emprunt.client_id).filter(Boolean)),
+  ];
 
-  const { data: clients, error: clientsError } = await supabase
-    .from("users")
-    .select("id, nom, prenom, email")
-    .in("id", clientIds);
+  const materielIds = [
+    ...new Set(emprunts.map((emprunt) => emprunt.materiel_id).filter(Boolean)),
+  ];
 
-  if (clientsError) {
-    console.log("Erreur getAllEmprunts clients:", clientsError);
+  let clients = [];
+  let materiels = [];
 
-    const err = new Error("Erreur lors du chargement des clients");
-    err.status = 500;
-    throw err;
+  if (clientIds.length > 0) {
+    const { data: usersData, error: usersError } = await supabase
+      .from("users")
+      .select("id, nom, prenom, email, telephone")
+      .in("id", clientIds);
+
+    if (usersError) {
+      console.log("Erreur chargement clients:", usersError);
+    } else {
+      clients = usersData || [];
+    }
   }
 
-  const { data: materiels, error: materielsError } = await supabase
-    .from("materiels")
-    .select("*")
-    .in("id", materielIds);
+  if (materielIds.length > 0) {
+    const { data: materielsData, error: materielsError } = await supabase
+      .from("materiels")
+      .select("id, nom, description, categorie, statut, etat, image_url, societe_id")
+      .in("id", materielIds);
 
-  if (materielsError) {
-    console.log("Erreur getAllEmprunts materiels:", materielsError);
-
-    const err = new Error("Erreur lors du chargement des matériels");
-    err.status = 500;
-    throw err;
+    if (materielsError) {
+      console.log("Erreur chargement matériels:", materielsError);
+    } else {
+      materiels = materielsData || [];
+    }
   }
 
-  const clientsMap = {};
-  clients.forEach((client) => {
-    clientsMap[client.id] = client;
-  });
+  const clientsMap = new Map(clients.map((client) => [client.id, client]));
+  const materielsMap = new Map(
+    materiels.map((materiel) => [materiel.id, materiel])
+  );
 
-  const materielsMap = {};
-  materiels.forEach((materiel) => {
-    materielsMap[materiel.id] = materiel;
-  });
+  return emprunts.map((emprunt) => {
+    const client = clientsMap.get(emprunt.client_id) || null;
+    const materiel = materielsMap.get(emprunt.materiel_id) || null;
 
-  return emprunts.map((emprunt) => ({
-    ...emprunt,
-    client: clientsMap[emprunt.client_id] || null,
-    materiel: materielsMap[emprunt.materiel_id] || null,
-  }));
+    return {
+      ...emprunt,
+
+      client,
+      materiel,
+
+      users: client,
+      materiels: materiel,
+    };
+  });
 };
 const validerDemandeEmprunt = async (adminId, empruntId) => {
   const { data: emprunt, error: empruntError } = await supabase

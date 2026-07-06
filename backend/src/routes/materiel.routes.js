@@ -18,6 +18,7 @@ const roleMiddleware = require("../middlewares/role.middleware");
 router.get("/", authMiddleware, getMateriels);
 router.get("/:id", authMiddleware, getMateriel);
 
+
 // Routes admin seulement
 router.post(
   "/",

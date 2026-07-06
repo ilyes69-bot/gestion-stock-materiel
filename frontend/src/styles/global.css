@@ -1745,6 +1745,7 @@ select:focus {
 
   background: linear-gradient(135deg, #ffffff 0%, #ff9f1c 55%, #ff5c00 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 
@@ -1798,6 +1799,7 @@ select:focus {
 
   background: linear-gradient(135deg, #ffffff 0%, #ffb347 55%, #ff7a00 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 
@@ -2114,6 +2116,7 @@ label {
 
   background: linear-gradient(135deg, #ffffff 0%, #ffb347 55%, #ff7a00 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 
@@ -2380,6 +2383,7 @@ label {
   font-weight: 950;
   background: linear-gradient(135deg, #ffffff 0%, #ffb347 55%, #ff6b00 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2472,6 +2476,7 @@ label {
   margin-bottom: 14px;
   background: linear-gradient(135deg, #ffffff 0%, #ffb347 60%, #ff7a00 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -3232,6 +3237,7 @@ a.secondary-button {
 
   background: linear-gradient(135deg, #ffffff 0%, #ffb347 55%, #ff7a00 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -3396,6 +3402,7 @@ a.secondary-button {
 
   background: linear-gradient(135deg, #ffffff 0%, #ffb347 55%, #ff7a00 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -3562,6 +3569,7 @@ a.secondary-button {
 
   background: linear-gradient(135deg, #ffffff 0%, #ffb347 55%, #ff7a00 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

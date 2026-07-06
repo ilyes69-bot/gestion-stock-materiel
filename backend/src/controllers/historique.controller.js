@@ -5,15 +5,17 @@ const {
 
 const getHistoriqueAdmin = async (req, res) => {
   try {
-    const historique = await getAllHistorique();
+    const historique = await getAllHistorique(req.user.id);
 
     res.status(200).json({
-      message: "Historique global",
+      message: "Historique de la société",
       data: historique,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    console.log("ERREUR HISTORIQUE ADMIN:", error);
+
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
     });
   }
 };
@@ -27,8 +29,10 @@ const getMonHistorique = async (req, res) => {
       data: historique,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    console.log("ERREUR MON HISTORIQUE:", error);
+
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
     });
   }
 };
