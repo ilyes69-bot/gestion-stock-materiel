@@ -16,6 +16,7 @@ const proprietaireEmpruntRoutes = require("./routes/proprietaireEmprunt.routes")
 const societeRoutes = require("./routes/societe.routes");
 const societeWorkerRoutes = require("./routes/societeWorker.routes");
 const superAdminUserRoutes = require("./routes/superAdminUser.routes");
+const superAdminStatsRoutes = require("./routes/superAdminStats.routes");
 
 app.use(cors());
 app.use(express.json());
@@ -40,6 +41,7 @@ app.use("/api/proprietaire-emprunts", proprietaireEmpruntRoutes);
 app.use("/api/societes", societeRoutes);
 app.use("/api/societe-workers", societeWorkerRoutes);
 app.use("/api/super-admin/users", superAdminUserRoutes);
+app.use("/api/super-admin/stats", superAdminStatsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
