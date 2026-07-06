@@ -49,6 +49,8 @@ import DemandesRecues from "../pages/client/DemandesRecues";
 import DemanderSociete from "../pages/client/DemanderSociete";
 import GestionSocietes from "../pages/superAdmin/GestionSocietes";
 import GestionTravailleurs from "../pages/admin/GestionTravailleurs";
+import SuperAdminLayout from "../components/layout/SuperAdminLayout";
+
 
 const AppRoutes = () => {
   return (
@@ -82,32 +84,20 @@ const AppRoutes = () => {
           <Route path="/client/demandes-recues" element={<DemandesRecues />} />
           <Route path="/client/demander-societe" element={<DemanderSociete />} />
         </Route>
-        {/* Routes super_Admin */}
-        <Route
-            path="/super-admin/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["super_admin"]}>
-                <SuperAdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-           {/* Routes super_Admin */}
-          <Route
-            path="/super-admin/materiels-en-attente"
-            element={
-              <ProtectedRoute allowedRoles={["super_admin"]}>
-                <MaterielsEnAttente />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-              path="/super-admin/societes"
+
+         {/* Routes Super Admin */}
+            <Route
+              path="/super-admin"
               element={
                 <ProtectedRoute allowedRoles={["super_admin"]}>
-                  <GestionSocietes />
+                  <SuperAdminLayout />
                 </ProtectedRoute>
               }
-            />    
+            >
+              <Route path="dashboard" element={<SuperAdminDashboard />} />
+              <Route path="societes" element={<GestionSocietes />} />
+              <Route path="materiels-en-attente" element={<MaterielsEnAttente />} />
+            </Route>  
         {/* Routes Admin */}
           <Route
             element={
