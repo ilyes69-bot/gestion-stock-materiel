@@ -214,21 +214,26 @@ const scanMaterielByQr = async (workerId, qrToken) => {
 };
 
 const confirmerSortie = async (workerId, empruntId) => {
+  const societeId = await getWorkerSocieteId(workerId);
+
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
     .select("*")
     .eq("id", empruntId)
     .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt société introuvable");
+    const error = new Error("Emprunt société introuvable dans votre société");
     error.status = 404;
     throw error;
   }
 
   if (emprunt.statut !== "VALIDE") {
-    const error = new Error("La sortie ne peut être confirmée que pour un emprunt validé");
+    const error = new Error(
+      "La sortie ne peut être confirmée que pour un emprunt validé"
+    );
     error.status = 400;
     throw error;
   }
@@ -243,6 +248,8 @@ const confirmerSortie = async (workerId, empruntId) => {
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .select()
     .single();
 
@@ -260,7 +267,9 @@ const confirmerSortie = async (workerId, empruntId) => {
       statut: "EMPRUNTE",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", emprunt.materiel_id);
+    .eq("id", emprunt.materiel_id)
+    .eq("proprietaire_type", "SOCIETE")
+    .eq("societe_id", societeId);
 
   await supabase.from("historique_actions").insert({
     user_id: workerId,
@@ -280,21 +289,26 @@ const confirmerSortie = async (workerId, empruntId) => {
 };
 
 const retourNormal = async (workerId, empruntId) => {
+  const societeId = await getWorkerSocieteId(workerId);
+
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
     .select("*")
     .eq("id", empruntId)
     .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt société introuvable");
+    const error = new Error("Emprunt société introuvable dans votre société");
     error.status = 404;
     throw error;
   }
 
   if (emprunt.statut !== "EN_COURS") {
-    const error = new Error("Le retour ne peut être déclaré que pour un emprunt en cours");
+    const error = new Error(
+      "Le retour ne peut être déclaré que pour un emprunt en cours"
+    );
     error.status = 400;
     throw error;
   }
@@ -310,6 +324,8 @@ const retourNormal = async (workerId, empruntId) => {
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .select()
     .single();
 
@@ -328,7 +344,9 @@ const retourNormal = async (workerId, empruntId) => {
       etat: "BON_ETAT",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", emprunt.materiel_id);
+    .eq("id", emprunt.materiel_id)
+    .eq("proprietaire_type", "SOCIETE")
+    .eq("societe_id", societeId);
 
   await supabase.from("historique_actions").insert({
     user_id: workerId,
@@ -348,6 +366,8 @@ const retourNormal = async (workerId, empruntId) => {
 };
 
 const retourProbleme = async (workerId, empruntId, dataRetour = {}) => {
+  const societeId = await getWorkerSocieteId(workerId);
+
   const { type_probleme_retour, commentaire_retour } = dataRetour;
 
   const { data: emprunt, error: empruntError } = await supabase
@@ -355,16 +375,19 @@ const retourProbleme = async (workerId, empruntId, dataRetour = {}) => {
     .select("*")
     .eq("id", empruntId)
     .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt société introuvable");
+    const error = new Error("Emprunt société introuvable dans votre société");
     error.status = 404;
     throw error;
   }
 
   if (emprunt.statut !== "EN_COURS") {
-    const error = new Error("Le retour ne peut être déclaré que pour un emprunt en cours");
+    const error = new Error(
+      "Le retour ne peut être déclaré que pour un emprunt en cours"
+    );
     error.status = 400;
     throw error;
   }
@@ -376,10 +399,13 @@ const retourProbleme = async (workerId, empruntId, dataRetour = {}) => {
       retour_par: workerId,
       probleme_retour: true,
       type_probleme_retour: type_probleme_retour || "ENDOMMAGE",
-      commentaire_retour: commentaire_retour || "Matériel retourné avec problème.",
+      commentaire_retour:
+        commentaire_retour || "Matériel retourné avec problème.",
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .select()
     .single();
 
@@ -398,7 +424,9 @@ const retourProbleme = async (workerId, empruntId, dataRetour = {}) => {
       etat: "ENDOMMAGE",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", emprunt.materiel_id);
+    .eq("id", emprunt.materiel_id)
+    .eq("proprietaire_type", "SOCIETE")
+    .eq("societe_id", societeId);
 
   await supabase.from("historique_actions").insert({
     user_id: workerId,
