@@ -20,6 +20,7 @@ const ClientNavbar = () => {
         <Link to="/client/ajouter-materiel">Ajouter matériel</Link>
         <Link to="/client/mes-materiels">Mes matériels</Link>
         <Link to="/client/demandes-recues">Demandes reçues</Link>
+        <Link to="/client/demander-societe">Créer société</Link>
       </div>
 
       <div className="client-navbar-user">

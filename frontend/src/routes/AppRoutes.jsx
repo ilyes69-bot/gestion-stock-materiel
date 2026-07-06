@@ -46,6 +46,10 @@ import SuperAdminDashboard from "../pages/superAdmin/SuperAdminDashboard";
 import MaterielsEnAttente from "../pages/superAdmin/MaterielsEnAttente";
 import DemandesRecues from "../pages/client/DemandesRecues";
 
+import DemanderSociete from "../pages/client/DemanderSociete";
+import GestionSocietes from "../pages/superAdmin/GestionSocietes";
+import GestionTravailleurs from "../pages/admin/GestionTravailleurs";
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
@@ -76,6 +80,7 @@ const AppRoutes = () => {
           <Route path="/client/ajouter-materiel" element={<AjouterMonMateriel />} />
           <Route path="/client/mes-materiels" element={<MesMateriels />} />
           <Route path="/client/demandes-recues" element={<DemandesRecues />} />
+          <Route path="/client/demander-societe" element={<DemanderSociete />} />
         </Route>
         {/* Routes super_Admin */}
         <Route
@@ -86,6 +91,7 @@ const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+           {/* Routes super_Admin */}
           <Route
             path="/super-admin/materiels-en-attente"
             element={
@@ -94,14 +100,22 @@ const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+              path="/super-admin/societes"
+              element={
+                <ProtectedRoute allowedRoles={["super_admin"]}>
+                  <GestionSocietes />
+                </ProtectedRoute>
+              }
+            />    
         {/* Routes Admin */}
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
           <Route path="/admin/dashboard" element={<DashboardAdmin />} />
           <Route path="/admin/materiels" element={<ListeMateriels />} />
           <Route path="/admin/materiels/ajouter" element={<AjouterMateriel />} />
@@ -110,6 +124,7 @@ const AppRoutes = () => {
           <Route path="/admin/historique" element={<HistoriqueGlobal />} />
           <Route path="/admin/profil" element={<ProfilAdmin />} />
           <Route path="/admin/utilisateurs" element={<GestionUtilisateurs />} />
+          <Route path="/admin/travailleurs" element={<GestionTravailleurs />} />
         </Route>
 
         <Route path="/unauthorized" element={<Unauthorized />} />

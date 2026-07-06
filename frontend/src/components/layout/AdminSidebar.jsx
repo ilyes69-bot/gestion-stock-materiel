@@ -37,7 +37,7 @@ const AdminSidebar = () => {
           </li>
 
           <li>
-            <Link to="/admin/utilisateurs">Utilisateurs</Link>
+            <Link to="/admin/travailleurs">Travailleurs</Link>
           </li>
         </ul>
       </nav>

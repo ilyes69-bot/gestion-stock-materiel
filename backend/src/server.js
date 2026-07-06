@@ -13,6 +13,8 @@ const app = express();
 const workerRoutes = require("./routes/worker.routes");
 const clientMaterielRoutes = require("./routes/clientMateriel.routes");
 const proprietaireEmpruntRoutes = require("./routes/proprietaireEmprunt.routes");
+const societeRoutes = require("./routes/societe.routes");
+const societeWorkerRoutes = require("./routes/societeWorker.routes");
 
 app.use(cors());
 app.use(express.json());
@@ -34,6 +36,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/worker", workerRoutes);
 app.use("/api/client-materiels", clientMaterielRoutes);
 app.use("/api/proprietaire-emprunts", proprietaireEmpruntRoutes);
+app.use("/api/societes", societeRoutes);
+app.use("/api/societe-workers", societeWorkerRoutes);
 
 const PORT = process.env.PORT || 5000;
 

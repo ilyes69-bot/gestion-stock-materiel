@@ -15,7 +15,7 @@ const SuperAdminDashboard = () => {
         <div className="super-admin-card">
           <h2>Sociétés</h2>
           <p>Créer, valider ou bloquer les sociétés inscrites.</p>
-          <button disabled>À venir</button>
+          <Link to="/super-admin/societes">Gérer les sociétés</Link>
         </div>
 
         <div className="super-admin-card">
