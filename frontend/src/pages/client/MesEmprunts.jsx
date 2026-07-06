@@ -93,7 +93,19 @@ const MesEmprunts = () => {
       <div className="my-loans-grid">
         {emprunts.map((emprunt) => (
           <div key={emprunt.id} className="my-loan-card">
-            <h3>{emprunt.materiels?.nom || "Matériel supprimé"}</h3>
+            <h3>
+              {(emprunt.materiel || emprunt.materiels)?.nom || "Matériel supprimé"}
+            </h3>
+
+            {(emprunt.materiel || emprunt.materiels)?.proprietaire_type === "UTILISATEUR" ? (
+              <span className="owner-type-badge user-owner">
+                Matériel utilisateur
+              </span>
+            ) : (
+              <span className="owner-type-badge company-owner">
+                Matériel société
+              </span>
+            )}
 
             <div className="my-loan-info">
               <div className="my-loan-info-box">
