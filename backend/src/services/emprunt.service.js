@@ -284,23 +284,24 @@ const getAllEmprunts = async (adminId) => {
   });
 };
 const validerDemandeEmprunt = async (adminId, empruntId) => {
+  const societeId = await getAdminSocieteId(adminId);
+
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
-    .select(`
-      *,
-      materiel:materiels (*)
-    `)
+    .select("*")
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt introuvable");
+    const error = new Error("Emprunt introuvable dans votre société");
     error.status = 404;
     throw error;
   }
 
-  if (emprunt.type_emprunt === "UTILISATEUR") {
-    const error = new Error("Cet emprunt doit être validé par le propriétaire du matériel");
+  if (emprunt.statut !== "EN_ATTENTE_VALIDATION") {
+    const error = new Error("Cette demande ne peut plus être validée");
     error.status = 400;
     throw error;
   }
@@ -312,6 +313,8 @@ const validerDemandeEmprunt = async (adminId, empruntId) => {
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .select()
     .single();
 
@@ -341,20 +344,24 @@ const validerDemandeEmprunt = async (adminId, empruntId) => {
 };
 
 const refuserDemandeEmprunt = async (adminId, empruntId) => {
+  const societeId = await getAdminSocieteId(adminId);
+
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
     .select("*")
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt introuvable");
+    const error = new Error("Emprunt introuvable dans votre société");
     error.status = 404;
     throw error;
   }
 
-  if (emprunt.type_emprunt === "UTILISATEUR") {
-    const error = new Error("Cet emprunt doit être refusé par le propriétaire du matériel");
+  if (emprunt.statut !== "EN_ATTENTE_VALIDATION") {
+    const error = new Error("Cette demande ne peut plus être refusée");
     error.status = 400;
     throw error;
   }
@@ -366,6 +373,8 @@ const refuserDemandeEmprunt = async (adminId, empruntId) => {
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .select()
     .single();
 
@@ -377,10 +386,15 @@ const refuserDemandeEmprunt = async (adminId, empruntId) => {
     throw err;
   }
 
-  await supabase.from("materiels").update({
-    statut: "DISPONIBLE",
-    updated_at: new Date().toISOString(),
-  }).eq("id", emprunt.materiel_id);
+  await supabase
+    .from("materiels")
+    .update({
+      statut: "DISPONIBLE",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", emprunt.materiel_id)
+    .eq("proprietaire_type", "SOCIETE")
+    .eq("societe_id", societeId);
 
   await supabase.from("historique_actions").insert({
     user_id: adminId,
@@ -400,15 +414,25 @@ const refuserDemandeEmprunt = async (adminId, empruntId) => {
 };
 
 const confirmerRetourNormalFinal = async (adminId, empruntId) => {
+  const societeId = await getAdminSocieteId(adminId);
+
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
     .select("*")
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt introuvable");
+    const error = new Error("Emprunt introuvable dans votre société");
     error.status = 404;
+    throw error;
+  }
+
+  if (emprunt.statut !== "EN_ATTENTE_CONFIRMATION_RETOUR") {
+    const error = new Error("Ce retour ne peut pas encore être confirmé");
+    error.status = 400;
     throw error;
   }
 
@@ -423,6 +447,8 @@ const confirmerRetourNormalFinal = async (adminId, empruntId) => {
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .select()
     .single();
 
@@ -434,33 +460,52 @@ const confirmerRetourNormalFinal = async (adminId, empruntId) => {
     throw err;
   }
 
-  await supabase.from("materiels").update({
-    statut: "DISPONIBLE",
-    etat: "BON_ETAT",
-    updated_at: new Date().toISOString(),
-  }).eq("id", emprunt.materiel_id);
+  await supabase
+    .from("materiels")
+    .update({
+      statut: "DISPONIBLE",
+      etat: "BON_ETAT",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", emprunt.materiel_id)
+    .eq("proprietaire_type", "SOCIETE")
+    .eq("societe_id", societeId);
 
   await supabase.from("historique_actions").insert({
     user_id: adminId,
     materiel_id: emprunt.materiel_id,
     emprunt_id: empruntId,
     type_action: "CONFIRMATION_RETOUR_NORMAL",
-    description: "L'admin a confirmé le retour normal du matériel.",
+    description: "L'admin société a confirmé le retour normal du matériel.",
   });
 
   return data;
 };
 
-const confirmerRetourEndommageFinal = async (adminId, empruntId, dataRetour = {}) => {
+const confirmerRetourEndommageFinal = async (
+  adminId,
+  empruntId,
+  dataRetour = {}
+) => {
+  const societeId = await getAdminSocieteId(adminId);
+
   const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
     .select("*")
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .single();
 
   if (empruntError || !emprunt) {
-    const error = new Error("Emprunt introuvable");
+    const error = new Error("Emprunt introuvable dans votre société");
     error.status = 404;
+    throw error;
+  }
+
+  if (emprunt.statut !== "EN_ATTENTE_CONFIRMATION_RETOUR") {
+    const error = new Error("Ce retour ne peut pas encore être confirmé");
+    error.status = 400;
     throw error;
   }
 
@@ -473,10 +518,13 @@ const confirmerRetourEndommageFinal = async (adminId, empruntId, dataRetour = {}
       date_retour_effective: new Date().toISOString(),
       probleme_retour: true,
       type_probleme_retour: type_probleme_retour || "ENDOMMAGE",
-      commentaire_retour: commentaire_retour || "Matériel retourné avec problème.",
+      commentaire_retour:
+        commentaire_retour || "Matériel retourné avec problème.",
       updated_at: new Date().toISOString(),
     })
     .eq("id", empruntId)
+    .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .select()
     .single();
 
@@ -488,18 +536,23 @@ const confirmerRetourEndommageFinal = async (adminId, empruntId, dataRetour = {}
     throw err;
   }
 
-  await supabase.from("materiels").update({
-    statut: "INDISPONIBLE",
-    etat: "ENDOMMAGE",
-    updated_at: new Date().toISOString(),
-  }).eq("id", emprunt.materiel_id);
+  await supabase
+    .from("materiels")
+    .update({
+      statut: "INDISPONIBLE",
+      etat: "ENDOMMAGE",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", emprunt.materiel_id)
+    .eq("proprietaire_type", "SOCIETE")
+    .eq("societe_id", societeId);
 
   await supabase.from("historique_actions").insert({
     user_id: adminId,
     materiel_id: emprunt.materiel_id,
     emprunt_id: empruntId,
     type_action: "CONFIRMATION_RETOUR_ENDOMMAGE",
-    description: "L'admin a confirmé un retour avec problème.",
+    description: "L'admin société a confirmé un retour avec problème.",
   });
 
   return data;
