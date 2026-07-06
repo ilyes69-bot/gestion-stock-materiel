@@ -69,20 +69,24 @@ const getAllMateriels = async (adminId) => {
   return data || [];
 };
 
-const getMaterielById = async (id) => {
-  const { data, error } = await supabase
+const getMaterielById = async (adminId, materielId) => {
+  const societeId = await getAdminSocieteId(adminId);
+
+  const { data: materiel, error } = await supabase
     .from("materiels")
     .select("*")
-    .eq("id", id)
+    .eq("id", materielId)
+    .eq("proprietaire_type", "SOCIETE")
+    .eq("societe_id", societeId)
     .single();
 
-  if (error || !data) {
-    const err = new Error("Matériel introuvable");
+  if (error || !materiel) {
+    const err = new Error("Matériel introuvable dans votre société");
     err.status = 404;
     throw err;
   }
 
-  return data;
+  return materiel;
 };
 
 const createMateriel = async (adminId, data) => {

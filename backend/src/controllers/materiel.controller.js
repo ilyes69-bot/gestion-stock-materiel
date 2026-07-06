@@ -25,7 +25,7 @@ const getMateriels = async (req, res) => {
 
 const getMateriel = async (req, res) => {
   try {
-    const materiel = await getMaterielById(req.params.id);
+    const materiel = await getMaterielById(req.user.id, req.params.id);
 
     res.status(200).json({
       materiel,
