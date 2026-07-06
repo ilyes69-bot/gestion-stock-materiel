@@ -1,5 +1,27 @@
 const supabase = require("../config/supabase");
 
+const getWorkerSocieteId = async (workerId) => {
+  const { data: worker, error } = await supabase
+    .from("users")
+    .select("id, role, societe_id")
+    .eq("id", workerId)
+    .single();
+
+  if (error || !worker) {
+    const err = new Error("Travailleur introuvable");
+    err.status = 404;
+    throw err;
+  }
+
+  if (worker.role !== "travailleur" || !worker.societe_id) {
+    const err = new Error("Vous n'êtes pas rattaché à une société");
+    err.status = 403;
+    throw err;
+  }
+
+  return worker.societe_id;
+};
+
 const enrichEmprunts = async (emprunts) => {
   if (!emprunts || emprunts.length === 0) return [];
 
@@ -41,11 +63,14 @@ const enrichEmprunts = async (emprunts) => {
   }));
 };
 
-const getWorkerEmprunts = async () => {
+const getWorkerEmprunts = async (workerId) => {
+  const societeId = await getWorkerSocieteId(workerId);
+
   const { data: emprunts, error } = await supabase
     .from("emprunts")
     .select("*")
     .eq("type_emprunt", "SOCIETE")
+    .eq("societe_id", societeId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -56,10 +81,61 @@ const getWorkerEmprunts = async () => {
     throw err;
   }
 
-  return enrichEmprunts(emprunts || []);
+  if (!emprunts || emprunts.length === 0) {
+    return [];
+  }
+
+  const clientIds = [
+    ...new Set(emprunts.map((emprunt) => emprunt.client_id).filter(Boolean)),
+  ];
+
+  const materielIds = [
+    ...new Set(emprunts.map((emprunt) => emprunt.materiel_id).filter(Boolean)),
+  ];
+
+  let clients = [];
+  let materiels = [];
+
+  if (clientIds.length > 0) {
+    const { data: usersData } = await supabase
+      .from("users")
+      .select("id, nom, prenom, email")
+      .in("id", clientIds);
+
+    clients = usersData || [];
+  }
+
+  if (materielIds.length > 0) {
+    const { data: materielsData } = await supabase
+      .from("materiels")
+      .select("id, nom, categorie, statut, etat, image_url, societe_id")
+      .in("id", materielIds);
+
+    materiels = materielsData || [];
+  }
+
+  const clientsMap = new Map(clients.map((client) => [client.id, client]));
+  const materielsMap = new Map(
+    materiels.map((materiel) => [materiel.id, materiel])
+  );
+
+  return emprunts.map((emprunt) => {
+    const client = clientsMap.get(emprunt.client_id) || null;
+    const materiel = materielsMap.get(emprunt.materiel_id) || null;
+
+    return {
+      ...emprunt,
+      client,
+      materiel,
+      users: client,
+      materiels: materiel,
+    };
+  });
 };
 
-const scanMaterielByQr = async (qrToken) => {
+const scanMaterielByQr = async (workerId, qrToken) => {
+  const societeId = await getWorkerSocieteId(workerId);
+
   const { data: materiel, error: materielError } = await supabase
     .from("materiels")
     .select("*")
@@ -80,33 +156,60 @@ const scanMaterielByQr = async (qrToken) => {
     throw error;
   }
 
-  const { data: emprunts, error: empruntError } = await supabase
+  if (materiel.societe_id !== societeId) {
+    const error = new Error(
+      "Vous ne pouvez pas scanner un matériel d'une autre société."
+    );
+    error.status = 403;
+    throw error;
+  }
+
+  const { data: emprunt, error: empruntError } = await supabase
     .from("emprunts")
     .select("*")
     .eq("materiel_id", materiel.id)
     .eq("type_emprunt", "SOCIETE")
-    .in("statut", ["VALIDE", "EN_COURS", "EN_ATTENTE_CONFIRMATION_RETOUR"])
+    .eq("societe_id", societeId)
+    .in("statut", [
+      "VALIDE",
+      "EN_COURS",
+      "EN_ATTENTE_CONFIRMATION_RETOUR",
+    ])
     .order("created_at", { ascending: false })
-    .limit(1);
+    .limit(1)
+    .maybeSingle();
 
   if (empruntError) {
-    console.log("Erreur scanMaterielByQr emprunt:", empruntError);
+    console.log("Erreur scan emprunt:", empruntError);
 
-    const error = new Error("Erreur lors du chargement de l'emprunt lié");
+    const error = new Error("Erreur lors de la recherche de l'emprunt");
     error.status = 500;
     throw error;
   }
 
-  let emprunt = emprunts && emprunts.length > 0 ? emprunts[0] : null;
+  let client = null;
 
-  if (emprunt) {
-    const enriched = await enrichEmprunts([emprunt]);
-    emprunt = enriched[0];
+  if (emprunt?.client_id) {
+    const { data: clientData } = await supabase
+      .from("users")
+      .select("id, nom, prenom, email")
+      .eq("id", emprunt.client_id)
+      .single();
+
+    client = clientData || null;
   }
 
   return {
     materiel,
-    emprunt,
+    emprunt: emprunt
+      ? {
+          ...emprunt,
+          client,
+          users: client,
+          materiel,
+          materiels: materiel,
+        }
+      : null,
   };
 };
 
@@ -316,6 +419,7 @@ const retourProbleme = async (workerId, empruntId, dataRetour = {}) => {
 
 module.exports = {
   getWorkerEmprunts,
+  getAllEmpruntsWorker: getWorkerEmprunts,
   scanMaterielByQr,
   confirmerSortie,
   retourNormal,
