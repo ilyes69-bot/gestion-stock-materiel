@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useDialog } from "../../context/DialogContext";
 import {
   getTravailleursSociete,
   createTravailleurSociete,
@@ -11,6 +12,8 @@ const GestionTravailleurs = () => {
   const [travailleurs, setTravailleurs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+
+  const { confirmDialog, promptDialog } = useDialog();
 
   const [formData, setFormData] = useState({
     nom: "",
@@ -83,12 +86,18 @@ const GestionTravailleurs = () => {
   };
 
   const handleBlock = async (id) => {
-    const reason = window.prompt("Raison du blocage :");
+    const reason = await promptDialog({
+      title: "Bloquer le travailleur",
+      message: "Veuillez indiquer la raison du blocage.",
+      label: "Raison du blocage",
+      placeholder: "Exemple : comportement non conforme, accès suspendu...",
+      confirmText: "Bloquer",
+      cancelText: "Annuler",
+      variant: "danger",
+      required: true,
+    });
 
-    if (!reason || reason.trim() === "") {
-      toast.error("La raison du blocage est obligatoire.");
-      return;
-    }
+    if (!reason) return;
 
     try {
       await bloquerTravailleurSociete(id, reason);
@@ -103,9 +112,12 @@ const GestionTravailleurs = () => {
   };
 
   const handleUnblock = async (id) => {
-    const confirmation = window.confirm(
-      "Voulez-vous débloquer ce travailleur ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Débloquer le travailleur",
+      message: "Voulez-vous débloquer ce travailleur ?",
+      confirmText: "Débloquer",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
@@ -135,9 +147,7 @@ const GestionTravailleurs = () => {
     <div className="admin-users-page">
       <div className="page-header">
         <h1>Gestion des travailleurs</h1>
-        <p>
-          Gérez uniquement les travailleurs rattachés à votre société.
-        </p>
+        <p>Gérez uniquement les travailleurs rattachés à votre société.</p>
       </div>
 
       <button

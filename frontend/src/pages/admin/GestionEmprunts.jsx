@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useDialog } from "../../context/DialogContext";
 import {
   getAllEmprunts,
   validerDemandeEmprunt,
@@ -22,6 +23,8 @@ const GestionEmprunts = () => {
   const [selectedDamageId, setSelectedDamageId] = useState(null);
   const [typeProbleme, setTypeProbleme] = useState("Matériel endommagé");
   const [commentaireRetour, setCommentaireRetour] = useState("");
+
+  const { confirmDialog } = useDialog();
 
   const loadEmprunts = async () => {
     try {
@@ -66,9 +69,12 @@ const GestionEmprunts = () => {
   };
 
   const handleValiderDemande = async (id) => {
-    const confirmation = window.confirm(
-      "Voulez-vous valider cette demande d'emprunt ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Valider la demande",
+      message: "Voulez-vous valider cette demande d'emprunt ?",
+      confirmText: "Valider",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
@@ -93,9 +99,13 @@ const GestionEmprunts = () => {
   };
 
   const handleRefuserDemande = async (id) => {
-    const confirmation = window.confirm(
-      "Voulez-vous refuser cette demande d'emprunt ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Refuser la demande",
+      message: "Voulez-vous refuser cette demande d'emprunt ?",
+      confirmText: "Refuser",
+      cancelText: "Annuler",
+      variant: "danger",
+    });
 
     if (!confirmation) return;
 
@@ -109,8 +119,7 @@ const GestionEmprunts = () => {
       await loadEmprunts();
     } catch (err) {
       const message =
-        err.response?.data?.message ||
-        "Erreur lors du refus de la demande.";
+        err.response?.data?.message || "Erreur lors du refus de la demande.";
 
       setError(message);
       toast.error(message);
@@ -120,9 +129,12 @@ const GestionEmprunts = () => {
   };
 
   const handleConfirmerRetourNormal = async (id) => {
-    const confirmation = window.confirm(
-      "Confirmer définitivement ce retour en bon état ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Confirmer le retour",
+      message: "Confirmer définitivement ce retour en bon état ?",
+      confirmText: "Confirmer",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
@@ -165,6 +177,17 @@ const GestionEmprunts = () => {
       return;
     }
 
+    const confirmation = await confirmDialog({
+      title: "Confirmer le problème",
+      message:
+        "Voulez-vous confirmer définitivement ce retour comme endommagé ?",
+      confirmText: "Confirmer",
+      cancelText: "Annuler",
+      variant: "danger",
+    });
+
+    if (!confirmation) return;
+
     try {
       setActionLoading(true);
       setError("");
@@ -196,25 +219,26 @@ const GestionEmprunts = () => {
   if (loading) {
     return <p>Chargement...</p>;
   }
+
   const filterOptions = [
-      { value: "TOUS", label: "Tous" },
-      { value: "EN_ATTENTE_VALIDATION", label: "En attente validation" },
-      { value: "VALIDE", label: "Validé" },
-      { value: "EN_COURS", label: "En cours" },
-      {
-        value: "EN_ATTENTE_CONFIRMATION_RETOUR",
-        label: "En attente retour",
-      },
-      { value: "RETOURNE", label: "Retourné" },
-      { value: "REFUSE", label: "Refusé" },
-    ];
+    { value: "TOUS", label: "Tous" },
+    { value: "EN_ATTENTE_VALIDATION", label: "En attente validation" },
+    { value: "VALIDE", label: "Validé" },
+    { value: "EN_COURS", label: "En cours" },
+    {
+      value: "EN_ATTENTE_CONFIRMATION_RETOUR",
+      label: "En attente retour",
+    },
+    { value: "RETOURNE", label: "Retourné" },
+    { value: "REFUSE", label: "Refusé" },
+  ];
 
-    const filteredEmprunts = emprunts.filter((emprunt) => {
-      if (statusFilter === "TOUS") {
-        return true;
-      }
+  const filteredEmprunts = emprunts.filter((emprunt) => {
+    if (statusFilter === "TOUS") {
+      return true;
+    }
 
-      return emprunt.statut === statusFilter;
+    return emprunt.statut === statusFilter;
   });
 
   return (
@@ -228,22 +252,23 @@ const GestionEmprunts = () => {
       </div>
 
       {error && <p className="error-message">{error}</p>}
+
       <div className="emprunts-filter-bar">
-          {filterOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={
-                statusFilter === option.value
-                  ? "emprunts-filter-button active"
-                  : "emprunts-filter-button"
-              }
-              onClick={() => setStatusFilter(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        {filterOptions.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={
+              statusFilter === option.value
+                ? "emprunts-filter-button active"
+                : "emprunts-filter-button"
+            }
+            onClick={() => setStatusFilter(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
 
       {filteredEmprunts.length === 0 && <p>Aucun emprunt trouvé.</p>}
 

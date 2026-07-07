@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useDialog } from "../../context/DialogContext";
 import {
   getAllSuperAdminUsers,
   bloquerSuperAdminUser,
@@ -10,6 +11,8 @@ import {
 const GestionUtilisateursSuperAdmin = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { confirmDialog, promptDialog } = useDialog();
 
   const loadUsers = async () => {
     try {
@@ -27,16 +30,22 @@ const GestionUtilisateursSuperAdmin = () => {
     loadUsers();
   }, []);
 
-  const handleBlock = async (id) => {
-    const raison = window.prompt("Raison du blocage :");
+  const handleBlock = async (user) => {
+    const raison = await promptDialog({
+      title: "Bloquer l’utilisateur",
+      message: `Vous êtes sur le point de bloquer ${user.prenom} ${user.nom}.`,
+      label: "Raison du blocage",
+      placeholder: "Exemple : comportement abusif, non-respect des règles...",
+      confirmText: "Bloquer",
+      cancelText: "Annuler",
+      variant: "danger",
+      required: true,
+    });
 
-    if (!raison || raison.trim() === "") {
-      toast.error("La raison du blocage est obligatoire.");
-      return;
-    }
+    if (!raison) return;
 
     try {
-      await bloquerSuperAdminUser(id, raison);
+      await bloquerSuperAdminUser(user.id, raison);
       toast.success("Utilisateur bloqué avec succès.");
       loadUsers();
     } catch (error) {
@@ -47,15 +56,18 @@ const GestionUtilisateursSuperAdmin = () => {
     }
   };
 
-  const handleUnblock = async (id) => {
-    const confirmation = window.confirm(
-      "Voulez-vous débloquer cet utilisateur ?"
-    );
+  const handleUnblock = async (user) => {
+    const confirmation = await confirmDialog({
+      title: "Débloquer l’utilisateur",
+      message: `Voulez-vous débloquer ${user.prenom} ${user.nom} ?`,
+      confirmText: "Débloquer",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
     try {
-      await debloquerSuperAdminUser(id);
+      await debloquerSuperAdminUser(user.id);
       toast.success("Utilisateur débloqué avec succès.");
       loadUsers();
     } catch (error) {
@@ -147,20 +159,18 @@ const GestionUtilisateursSuperAdmin = () => {
 
                   <td>
                     {user.role === "super_admin" ? (
-                      <span className="super-admin-muted-action">
-                        Protégé
-                      </span>
+                      <span className="super-admin-muted-action">Protégé</span>
                     ) : user.statut_compte === "BLOQUE" ? (
                       <button
                         className="super-admin-small-btn"
-                        onClick={() => handleUnblock(user.id)}
+                        onClick={() => handleUnblock(user)}
                       >
                         Débloquer
                       </button>
                     ) : (
                       <button
                         className="super-admin-small-btn danger"
-                        onClick={() => handleBlock(user.id)}
+                        onClick={() => handleBlock(user)}
                       >
                         Bloquer
                       </button>

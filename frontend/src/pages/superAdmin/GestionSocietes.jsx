@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import {  
+import { useDialog } from "../../context/DialogContext";
+import {
   getToutesSocietes,
   approuverSociete,
   refuserSociete,
@@ -10,6 +11,8 @@ import {
 const GestionSocietes = () => {
   const [societes, setSocietes] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { confirmDialog, promptDialog } = useDialog();
 
   const loadSocietes = async () => {
     try {
@@ -28,9 +31,13 @@ const GestionSocietes = () => {
   }, []);
 
   const handleApprove = async (id) => {
-    const confirmation = window.confirm(
-      "Voulez-vous approuver cette société ? Le demandeur deviendra admin société."
-    );
+    const confirmation = await confirmDialog({
+      title: "Approuver la société",
+      message:
+        "Voulez-vous approuver cette société ? Le demandeur deviendra admin société.",
+      confirmText: "Approuver",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
@@ -47,12 +54,18 @@ const GestionSocietes = () => {
   };
 
   const handleRefuse = async (id) => {
-    const commentaire = window.prompt("Raison du refus :");
+    const commentaire = await promptDialog({
+      title: "Refuser la société",
+      message: "Veuillez indiquer la raison du refus.",
+      label: "Raison du refus",
+      placeholder: "Exemple : informations incomplètes, société non conforme...",
+      confirmText: "Refuser",
+      cancelText: "Annuler",
+      variant: "danger",
+      required: true,
+    });
 
-    if (!commentaire || commentaire.trim() === "") {
-      toast.error("La raison du refus est obligatoire.");
-      return;
-    }
+    if (!commentaire) return;
 
     try {
       await refuserSociete(id, commentaire);
@@ -92,6 +105,7 @@ const GestionSocietes = () => {
         <Link to="/super-admin/dashboard" className="super-admin-back-btn">
           ← Retour dashboard
         </Link>
+
         <h1>Gestion des sociétés</h1>
         <p>
           Retrouvez ici les demandes de création de sociétés et les sociétés
@@ -116,8 +130,7 @@ const GestionSocietes = () => {
               </div>
 
               <p>
-                <strong>Email :</strong>{" "}
-                {societe.email || "Non renseigné"}
+                <strong>Email :</strong> {societe.email || "Non renseigné"}
               </p>
 
               <p>

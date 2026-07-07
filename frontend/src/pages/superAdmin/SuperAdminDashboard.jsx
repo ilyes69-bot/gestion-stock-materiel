@@ -250,6 +250,12 @@ const SuperAdminDashboard = () => {
           <p>Voir les utilisateurs de la plateforme et gérer les abus.</p>
           <Link to="/super-admin/utilisateurs">Gérer les utilisateurs</Link>
         </div>
+
+        <div className="super-admin-card">
+          <h2>Historique global</h2>
+          <p>Consulter toutes les actions réalisées sur la plateforme.</p>
+          <Link to="/super-admin/historique">Voir l’historique</Link>
+        </div>
       </div>
     </div>
   );

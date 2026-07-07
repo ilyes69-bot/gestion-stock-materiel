@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useDialog } from "../../context/DialogContext";
 import {
   getMaterielsClientsEnAttente,
   approuverMaterielClient,
@@ -10,6 +11,8 @@ import {
 const MaterielsEnAttente = () => {
   const [materiels, setMateriels] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { confirmDialog, promptDialog } = useDialog();
 
   const loadMateriels = async () => {
     try {
@@ -28,6 +31,16 @@ const MaterielsEnAttente = () => {
   }, []);
 
   const handleApprove = async (id) => {
+    const confirmation = await confirmDialog({
+      title: "Approuver le matériel",
+      message:
+        "Voulez-vous approuver ce matériel ? Il sera visible dans le catalogue client.",
+      confirmText: "Approuver",
+      cancelText: "Annuler",
+    });
+
+    if (!confirmation) return;
+
     try {
       await approuverMaterielClient(id);
       toast.success("Matériel approuvé avec succès.");
@@ -38,12 +51,18 @@ const MaterielsEnAttente = () => {
   };
 
   const handleRefuse = async (id) => {
-    const commentaire = window.prompt("Raison du refus :");
+    const commentaire = await promptDialog({
+      title: "Refuser le matériel",
+      message: "Veuillez indiquer la raison du refus.",
+      label: "Raison du refus",
+      placeholder: "Exemple : photo non claire, description insuffisante...",
+      confirmText: "Refuser",
+      cancelText: "Annuler",
+      variant: "danger",
+      required: true,
+    });
 
-    if (!commentaire || commentaire.trim() === "") {
-      toast.error("La raison du refus est obligatoire.");
-      return;
-    }
+    if (!commentaire) return;
 
     try {
       await refuserMaterielClient(id, commentaire);
@@ -64,6 +83,7 @@ const MaterielsEnAttente = () => {
         <Link to="/super-admin/dashboard" className="super-admin-back-btn">
           ← Retour dashboard
         </Link>
+
         <h1>Matériels utilisateurs en attente</h1>
         <p>
           Validez ou refusez les matériels proposés par les utilisateurs avant

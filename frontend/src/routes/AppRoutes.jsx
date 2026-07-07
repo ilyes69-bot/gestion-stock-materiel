@@ -51,6 +51,7 @@ import GestionSocietes from "../pages/superAdmin/GestionSocietes";
 import GestionTravailleurs from "../pages/admin/GestionTravailleurs";
 import SuperAdminLayout from "../components/layout/SuperAdminLayout";
 import GestionUtilisateursSuperAdmin from "../pages/superAdmin/GestionUtilisateursSuperAdmin";    
+import HistoriqueGlobalSuperAdmin from "../pages/superAdmin/HistoriqueGlobalSuperAdmin";
 
 
 const AppRoutes = () => {
@@ -99,6 +100,7 @@ const AppRoutes = () => {
               <Route path="societes" element={<GestionSocietes />} />
               <Route path="materiels-en-attente" element={<MaterielsEnAttente />} />
               <Route path="utilisateurs" element={<GestionUtilisateursSuperAdmin />} />
+              <Route path="historique" element={<HistoriqueGlobalSuperAdmin />} />
             </Route>  
         {/* Routes Admin */}
           <Route

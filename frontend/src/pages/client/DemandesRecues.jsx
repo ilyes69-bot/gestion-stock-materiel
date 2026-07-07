@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useDialog } from "../../context/DialogContext";
 import {
   getDemandesRecues,
   accepterDemandeRecue,
@@ -12,6 +13,8 @@ import {
 const DemandesRecues = () => {
   const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { confirmDialog, promptDialog } = useDialog();
 
   const loadDemandes = async () => {
     try {
@@ -30,6 +33,15 @@ const DemandesRecues = () => {
   }, []);
 
   const handleAccept = async (id) => {
+    const confirmation = await confirmDialog({
+      title: "Accepter la demande",
+      message: "Voulez-vous accepter cette demande d’emprunt ?",
+      confirmText: "Accepter",
+      cancelText: "Annuler",
+    });
+
+    if (!confirmation) return;
+
     try {
       await accepterDemandeRecue(id);
       toast.success("Demande acceptée avec succès.");
@@ -43,12 +55,18 @@ const DemandesRecues = () => {
   };
 
   const handleRefuse = async (id) => {
-    const commentaire = window.prompt("Raison du refus :");
+    const commentaire = await promptDialog({
+      title: "Refuser la demande",
+      message: "Veuillez indiquer la raison du refus.",
+      label: "Raison du refus",
+      placeholder: "Exemple : matériel indisponible, dates non compatibles...",
+      confirmText: "Refuser",
+      cancelText: "Annuler",
+      variant: "danger",
+      required: true,
+    });
 
-    if (!commentaire || commentaire.trim() === "") {
-      toast.error("La raison du refus est obligatoire.");
-      return;
-    }
+    if (!commentaire) return;
 
     try {
       await refuserDemandeRecue(id, commentaire);
@@ -63,9 +81,12 @@ const DemandesRecues = () => {
   };
 
   const handleConfirmHandover = async (id) => {
-    const confirmation = window.confirm(
-      "Confirmer que vous avez remis le matériel au client ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Confirmer la remise",
+      message: "Confirmer que vous avez remis le matériel au client ?",
+      confirmText: "Confirmer",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
@@ -82,9 +103,12 @@ const DemandesRecues = () => {
   };
 
   const handleReturnNormal = async (id) => {
-    const confirmation = window.confirm(
-      "Confirmer que le matériel a été retourné en bon état ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Retour normal",
+      message: "Confirmer que le matériel a été retourné en bon état ?",
+      confirmText: "Confirmer",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
@@ -101,14 +125,18 @@ const DemandesRecues = () => {
   };
 
   const handleReturnProblem = async (id) => {
-    const commentaire = window.prompt(
-      "Décrivez le problème constaté au retour :"
-    );
+    const commentaire = await promptDialog({
+      title: "Retour avec problème",
+      message: "Décrivez le problème constaté au retour.",
+      label: "Commentaire",
+      placeholder: "Exemple : matériel endommagé, pièce manquante...",
+      confirmText: "Confirmer",
+      cancelText: "Annuler",
+      variant: "danger",
+      required: true,
+    });
 
-    if (!commentaire || commentaire.trim() === "") {
-      toast.error("Le commentaire est obligatoire.");
-      return;
-    }
+    if (!commentaire) return;
 
     try {
       await confirmerRetourProblemeMateriel(id, {

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { deleteMateriel, getMateriels } from "../../services/materielService";
+import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
+import { useDialog } from "../../context/DialogContext";
+import { deleteMateriel, getMateriels } from "../../services/materielService";
 
 const ListeMateriels = () => {
   const [materiels, setMateriels] = useState([]);
@@ -9,8 +11,11 @@ const ListeMateriels = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const { confirmDialog } = useDialog();
+
   const loadMateriels = async () => {
     try {
+      setLoading(true);
       const data = await getMateriels();
       setMateriels(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -25,9 +30,13 @@ const ListeMateriels = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    const confirmation = window.confirm(
-      "Voulez-vous vraiment supprimer ce matériel ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Supprimer le matériel",
+      message: "Voulez-vous vraiment supprimer ce matériel ?",
+      confirmText: "Supprimer",
+      cancelText: "Annuler",
+      variant: "danger",
+    });
 
     if (!confirmation) return;
 
@@ -38,9 +47,13 @@ const ListeMateriels = () => {
       await deleteMateriel(id);
 
       setSuccess("Matériel supprimé avec succès");
+      toast.success("Matériel supprimé avec succès");
       loadMateriels();
     } catch (err) {
-      setError(err.response?.data?.message || "Erreur lors de la suppression");
+      const message =
+        err.response?.data?.message || "Erreur lors de la suppression";
+      setError(message);
+      toast.error(message);
     }
   };
 
@@ -54,122 +67,130 @@ const ListeMateriels = () => {
     if (etat === "BON_ETAT") return "badge badge-success";
     return "badge badge-danger";
   };
+
   const getQrScanUrl = (qrToken) => {
-  return `${window.location.origin}/worker/scan/${qrToken}`;
+    return `${window.location.origin}/worker/scan/${qrToken}`;
   };
-      const printQrCode = (materiel) => {
-      const canvas = document.getElementById(`qr-canvas-${materiel.id}`);
 
-      if (!canvas) {
-        alert("QR code introuvable.");
-        return;
-      }
+  const printQrCode = (materiel) => {
+    const canvas = document.getElementById(`qr-canvas-${materiel.id}`);
 
-      const qrImage = canvas.toDataURL("image/png");
-      const scanUrl = getQrScanUrl(materiel.qr_token);
+    if (!canvas) {
+      toast.error("QR code introuvable.");
+      return;
+    }
 
-      const printWindow = window.open("", "_blank");
+    const qrImage = canvas.toDataURL("image/png");
+    const scanUrl = getQrScanUrl(materiel.qr_token);
 
-      if (!printWindow) {
-        alert("Impossible d’ouvrir la fenêtre d’impression.");
-        return;
-      }
+    const printWindow = window.open("", "_blank");
 
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>QR Code - ${materiel.nom}</title>
-            <style>
+    if (!printWindow) {
+      toast.error("Impossible d’ouvrir la fenêtre d’impression.");
+      return;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - ${materiel.nom}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background: #ffffff;
+              color: #111111;
+              padding: 30px;
+              text-align: center;
+            }
+
+            .qr-card {
+              width: 320px;
+              margin: 0 auto;
+              padding: 22px;
+              border: 2px solid #111111;
+              border-radius: 16px;
+            }
+
+            h1 {
+              font-size: 22px;
+              margin: 0 0 8px;
+            }
+
+            h2 {
+              font-size: 18px;
+              margin: 0 0 18px;
+            }
+
+            img {
+              width: 210px;
+              height: 210px;
+              margin: 12px 0;
+            }
+
+            p {
+              margin: 8px 0;
+              font-size: 13px;
+            }
+
+            .small {
+              font-size: 11px;
+              word-break: break-all;
+              color: #555555;
+            }
+
+            @media print {
               body {
-                font-family: Arial, sans-serif;
-                background: #ffffff;
-                color: #111111;
-                padding: 30px;
-                text-align: center;
+                padding: 0;
               }
 
               .qr-card {
-                width: 320px;
-                margin: 0 auto;
-                padding: 22px;
-                border: 2px solid #111111;
-                border-radius: 16px;
+                margin-top: 20px;
               }
+            }
+          </style>
+        </head>
 
-              h1 {
-                font-size: 22px;
-                margin: 0 0 8px;
-              }
+        <body>
+          <div class="qr-card">
+            <h1>StockManager</h1>
+            <h2>${materiel.nom}</h2>
 
-              h2 {
-                font-size: 18px;
-                margin: 0 0 18px;
-              }
+            <img src="${qrImage}" alt="QR Code matériel" />
 
-              img {
-                width: 210px;
-                height: 210px;
-                margin: 12px 0;
-              }
+            <p><strong>Catégorie :</strong> ${
+              materiel.categorie || "Non renseignée"
+            }</p>
+            <p><strong>Statut :</strong> ${
+              materiel.statut || "Non renseigné"
+            }</p>
+            <p><strong>État :</strong> ${
+              materiel.etat || "Non renseigné"
+            }</p>
 
-              p {
-                margin: 8px 0;
-                font-size: 13px;
-              }
+            <p class="small">${scanUrl}</p>
+          </div>
 
-              .small {
-                font-size: 11px;
-                word-break: break-all;
-                color: #555555;
-              }
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
 
-              @media print {
-                body {
-                  padding: 0;
-                }
-
-                .qr-card {
-                  margin-top: 20px;
-                }
-              }
-            </style>
-          </head>
-
-          <body>
-            <div class="qr-card">
-              <h1>StockManager</h1>
-              <h2>${materiel.nom}</h2>
-
-              <img src="${qrImage}" alt="QR Code matériel" />
-
-              <p><strong>Catégorie :</strong> ${materiel.categorie || "Non renseignée"}</p>
-              <p><strong>Statut :</strong> ${materiel.statut || "Non renseigné"}</p>
-              <p><strong>État :</strong> ${materiel.etat || "Non renseigné"}</p>
-
-              <p class="small">${scanUrl}</p>
-            </div>
-
-            <script>
-              window.onload = function() {
-                window.print();
-              };
-            </script>
-          </body>
-        </html>
-      `);
-
-      printWindow.document.close();
-    };
+    printWindow.document.close();
+  };
 
   const copyQrLink = async (qrToken) => {
     const link = getQrScanUrl(qrToken);
 
     try {
       await navigator.clipboard.writeText(link);
-      alert("Lien du QR code copié avec succès.");
+      toast.success("Lien du QR code copié avec succès.");
     } catch (error) {
-      alert("Erreur lors de la copie du lien.");
+      toast.error("Erreur lors de la copie du lien.");
     }
   };
 
@@ -190,24 +211,21 @@ const ListeMateriels = () => {
       {error && <p className="error-message">{error}</p>}
       {success && <p className="success-message">{success}</p>}
 
-      {!loading && materiels.length === 0 && (
-        <p>Aucun matériel trouvé.</p>
-      )}
+      {!loading && materiels.length === 0 && <p>Aucun matériel trouvé.</p>}
 
       <div className="inventory-grid">
         {materiels.map((materiel) => (
           <div key={materiel.id} className="inventory-card">
             {materiel.image_url ? (
-                <img
-                  className="materiel-image"
-                  src={materiel.image_url}
-                  alt={materiel.nom}
-                />
-              ) : (
-                <div className="materiel-image-placeholder">
-                  Aucune photo
-                </div>
-              )}
+              <img
+                className="materiel-image"
+                src={materiel.image_url}
+                alt={materiel.nom}
+              />
+            ) : (
+              <div className="materiel-image-placeholder">Aucune photo</div>
+            )}
+
             <div className="inventory-card-header">
               <h3>{materiel.nom}</h3>
 
@@ -221,7 +239,6 @@ const ListeMateriels = () => {
             </p>
 
             <div className="inventory-info">
-
               <div className="inventory-info-box">
                 <span>Statut</span>
                 <span className={getStatutClass(materiel.statut)}>
@@ -236,37 +253,39 @@ const ListeMateriels = () => {
                 </span>
               </div>
             </div>
-              {materiel.qr_token && (
-                <div className="admin-materiel-qr-box">
-                  <p className="admin-materiel-qr-title">QR code du matériel</p>
 
-                  <div className="admin-materiel-qr-image">
-                    <QRCodeCanvas
-                      id={`qr-canvas-${materiel.id}`}
-                      value={getQrScanUrl(materiel.qr_token)}
-                      size={140}
-                      level="H"
-                      includeMargin={true}
-                    />
-                  </div>
+            {materiel.qr_token && (
+              <div className="admin-materiel-qr-box">
+                <p className="admin-materiel-qr-title">QR code du matériel</p>
 
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => copyQrLink(materiel.qr_token)}
-                  >
-                    Copier lien scan
-                  </button>
-                  <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => printQrCode(materiel)}
-                    >
-                      Imprimer QR code
-                  </button>
+                <div className="admin-materiel-qr-image">
+                  <QRCodeCanvas
+                    id={`qr-canvas-${materiel.id}`}
+                    value={getQrScanUrl(materiel.qr_token)}
+                    size={140}
+                    level="H"
+                    includeMargin={true}
+                  />
                 </div>
-              )}
-              
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => copyQrLink(materiel.qr_token)}
+                >
+                  Copier lien scan
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => printQrCode(materiel)}
+                >
+                  Imprimer QR code
+                </button>
+              </div>
+            )}
+
             <div className="inventory-actions">
               <Link
                 className="button-link"
@@ -287,7 +306,6 @@ const ListeMateriels = () => {
       </div>
     </div>
   );
-
 };
 
 export default ListeMateriels;

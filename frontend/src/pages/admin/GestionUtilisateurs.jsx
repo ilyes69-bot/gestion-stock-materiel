@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useDialog } from "../../context/DialogContext";
 import {
   getUsers,
   blockUser,
   unblockUser,
 } from "../../services/userService";
-import toast from "react-hot-toast";
 
 const GestionUtilisateurs = () => {
   const [users, setUsers] = useState([]);
@@ -16,8 +17,11 @@ const GestionUtilisateurs = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const { confirmDialog } = useDialog();
+
   const loadUsers = async () => {
     try {
+      setLoading(true);
       const data = await getUsers();
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -46,6 +50,7 @@ const GestionUtilisateurs = () => {
   const handleBlock = async (userId) => {
     if (!reason.trim()) {
       setError("Veuillez écrire une raison de blocage.");
+      toast.error("Veuillez écrire une raison de blocage.");
       return;
     }
 
@@ -55,31 +60,33 @@ const GestionUtilisateurs = () => {
       setSuccess("");
 
       await blockUser(userId, reason);
-      toast.success("Utilisateur bloqué avec succès.");
 
+      toast.success("Utilisateur bloqué avec succès.");
       setSuccess("Utilisateur bloqué avec succès.");
+
       setSelectedUserId(null);
       setReason("");
 
       loadUsers();
     } catch (err) {
-      setError(
+      const message =
         err.response?.data?.message ||
-          "Erreur lors du blocage de l'utilisateur."
-      );
-      toast.error(
-        err.response?.data?.message ||
-            "Erreur lors du blocage de l'utilisateur."
-        );
+        "Erreur lors du blocage de l'utilisateur.";
+
+      setError(message);
+      toast.error(message);
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleUnblock = async (userId) => {
-    const confirmation = window.confirm(
-      "Voulez-vous vraiment débloquer cet utilisateur ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Débloquer l’utilisateur",
+      message: "Voulez-vous vraiment débloquer cet utilisateur ?",
+      confirmText: "Débloquer",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
@@ -89,15 +96,18 @@ const GestionUtilisateurs = () => {
       setSuccess("");
 
       await unblockUser(userId);
-      toast.success("Utilisateur débloqué avec succès.");
 
+      toast.success("Utilisateur débloqué avec succès.");
       setSuccess("Utilisateur débloqué avec succès.");
+
       loadUsers();
     } catch (err) {
-      setError(
+      const message =
         err.response?.data?.message ||
-          "Erreur lors du déblocage de l'utilisateur."
-      );
+        "Erreur lors du déblocage de l'utilisateur.";
+
+      setError(message);
+      toast.error(message);
     } finally {
       setActionLoading(false);
     }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useDialog } from "../../context/DialogContext";
 import {
   scanMateriel,
   confirmerSortie,
@@ -21,6 +22,8 @@ const WorkerScan = () => {
   const [typeProbleme, setTypeProbleme] = useState("Matériel endommagé");
   const [commentaireRetour, setCommentaireRetour] = useState("");
 
+  const { confirmDialog } = useDialog();
+
   const loadScan = async () => {
     try {
       setLoading(true);
@@ -32,8 +35,7 @@ const WorkerScan = () => {
       setEmprunt(data.emprunt);
     } catch (err) {
       const message =
-        err.response?.data?.message ||
-        "Erreur lors du scan du matériel.";
+        err.response?.data?.message || "Erreur lors du scan du matériel.";
 
       setError(message);
       toast.error(message);
@@ -69,6 +71,15 @@ const WorkerScan = () => {
   const handleConfirmSortie = async () => {
     if (!emprunt?.id) return;
 
+    const confirmation = await confirmDialog({
+      title: "Confirmer la sortie",
+      message: "Voulez-vous confirmer la sortie de ce matériel ?",
+      confirmText: "Confirmer",
+      cancelText: "Annuler",
+    });
+
+    if (!confirmation) return;
+
     try {
       setActionLoading(true);
       setError("");
@@ -92,9 +103,12 @@ const WorkerScan = () => {
   const handleRetourNormal = async () => {
     if (!emprunt?.id) return;
 
-    const confirmation = window.confirm(
-      "Confirmer le retour normal de ce matériel ?"
-    );
+    const confirmation = await confirmDialog({
+      title: "Retour normal",
+      message: "Confirmer le retour normal de ce matériel ?",
+      confirmText: "Confirmer",
+      cancelText: "Annuler",
+    });
 
     if (!confirmation) return;
 
@@ -125,6 +139,16 @@ const WorkerScan = () => {
       toast.error("Veuillez écrire un commentaire.");
       return;
     }
+
+    const confirmation = await confirmDialog({
+      title: "Retour avec problème",
+      message: "Voulez-vous confirmer ce retour avec problème ?",
+      confirmText: "Confirmer",
+      cancelText: "Annuler",
+      variant: "danger",
+    });
+
+    if (!confirmation) return;
 
     try {
       setActionLoading(true);
@@ -173,9 +197,7 @@ const WorkerScan = () => {
 
       {error && <p className="error-message">{error}</p>}
 
-      {!materiel && !error && (
-        <p>Aucun matériel trouvé avec ce QR code.</p>
-      )}
+      {!materiel && !error && <p>Aucun matériel trouvé avec ce QR code.</p>}
 
       {materiel && (
         <div className="worker-card">
@@ -272,59 +294,51 @@ const WorkerScan = () => {
           )}
 
           {emprunt.statut === "EN_ATTENTE_VALIDATION" && (
-                <p className="worker-muted">
-                    Cette demande attend encore la validation de l’administrateur.
-                </p>
-                )}
+            <p className="worker-muted">
+              Cette demande attend encore la validation de l’administrateur.
+            </p>
+          )}
 
-                {emprunt.statut === "VALIDE" && (
-                <div className="worker-actions">
-                    <button
-                    onClick={handleConfirmSortie}
-                    disabled={actionLoading}
-                    >
-                    {actionLoading ? "Validation..." : "Confirmer sortie"}
-                    </button>
-                </div>
-                )}
+          {emprunt.statut === "VALIDE" && (
+            <div className="worker-actions">
+              <button onClick={handleConfirmSortie} disabled={actionLoading}>
+                {actionLoading ? "Validation..." : "Confirmer sortie"}
+              </button>
+            </div>
+          )}
 
-                {emprunt.statut === "EN_COURS" && (
-                <div className="worker-actions">
-                    <button
-                    onClick={handleRetourNormal}
-                    disabled={actionLoading}
-                    >
-                    Retour normal
-                    </button>
+          {emprunt.statut === "EN_COURS" && (
+            <div className="worker-actions">
+              <button onClick={handleRetourNormal} disabled={actionLoading}>
+                Retour normal
+              </button>
 
-                    <button
-                    className="delete-button"
-                    onClick={() => setShowProblemForm(true)}
-                    disabled={actionLoading}
-                    >
-                    Retour avec problème
-                    </button>
-                </div>
-                )}
+              <button
+                className="delete-button"
+                onClick={() => setShowProblemForm(true)}
+                disabled={actionLoading}
+              >
+                Retour avec problème
+              </button>
+            </div>
+          )}
 
-                {emprunt.statut === "EN_ATTENTE_CONFIRMATION_RETOUR" && (
-                <p className="worker-muted">
-                    Le retour a été déclaré. En attente de confirmation finale par
-                    l’administrateur.
-                </p>
-                )}
+          {emprunt.statut === "EN_ATTENTE_CONFIRMATION_RETOUR" && (
+            <p className="worker-muted">
+              Le retour a été déclaré. En attente de confirmation finale par
+              l’administrateur.
+            </p>
+          )}
 
-                {emprunt.statut === "RETOURNE" && (
-                <p className="worker-muted">
-                    Cet emprunt est déjà clôturé.
-                </p>
-                )}
+          {emprunt.statut === "RETOURNE" && (
+            <p className="worker-muted">Cet emprunt est déjà clôturé.</p>
+          )}
 
-                {emprunt.statut === "REFUSE" && (
-                <p className="worker-muted">
-                    Cette demande d’emprunt a été refusée.
-                </p>
-                )}
+          {emprunt.statut === "REFUSE" && (
+            <p className="worker-muted">
+              Cette demande d’emprunt a été refusée.
+            </p>
+          )}
 
           {showProblemForm && (
             <div className="worker-problem-form">

@@ -26,6 +26,7 @@ const SuperAdminLayout = () => {
             <NavLink to="/super-admin/materiels-en-attente">
               📦 Matériels utilisateurs
             </NavLink>
+            <NavLink to="/super-admin/historique">📜 Historique</NavLink>
           </nav>
         </div>
 
