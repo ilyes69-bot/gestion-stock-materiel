@@ -58,10 +58,16 @@ const SuperAdminDashboard = () => {
   const loadStats = async () => {
     try {
       setLoading(true);
+      setError("");
+
       const data = await getSuperAdminStats();
-      setStats(data);
+      setStats(data || {});
     } catch (err) {
-      setError("Erreur lors du chargement des statistiques globales.");
+      console.log("Erreur dashboard super admin:", err);
+      setError(
+        err.response?.data?.message ||
+          "Erreur lors du chargement du dashboard super admin"
+      );
     } finally {
       setLoading(false);
     }
