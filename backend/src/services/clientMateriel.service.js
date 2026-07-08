@@ -202,7 +202,56 @@ const getCataloguePublic = async () => {
     throw err;
   }
 
-  return data || [];
+  const materiels = data || [];
+
+  const societeIds = [
+    ...new Set(
+      materiels
+        .filter((materiel) => materiel.proprietaire_type === "SOCIETE")
+        .map((materiel) => materiel.societe_id)
+        .filter(Boolean)
+    ),
+  ];
+
+  let societesMap = new Map();
+
+  if (societeIds.length > 0) {
+    const { data: societes, error: societesError } = await supabase
+      .from("societes")
+      .select("id, nom")
+      .in("id", societeIds);
+
+    if (societesError) {
+      console.log("Erreur chargement sociétés catalogue:", societesError);
+    } else {
+      societesMap = new Map(
+        (societes || []).map((societe) => [societe.id, societe])
+      );
+    }
+  }
+
+  return materiels.map((materiel) => {
+    if (materiel.proprietaire_type === "SOCIETE") {
+      const societe = societesMap.get(materiel.societe_id) || null;
+
+      return {
+        ...materiel,
+        societe,
+        proprietaire_nom: societe?.nom || "Société",
+        proprietaire_label: "Société",
+      };
+    }
+
+    const ownerName = materiel.owner
+      ? `${materiel.owner.prenom || ""} ${materiel.owner.nom || ""}`.trim()
+      : "";
+
+    return {
+      ...materiel,
+      proprietaire_nom: ownerName || "Utilisateur",
+      proprietaire_label: "Propriétaire",
+    };
+  });
 };
 
 module.exports = {

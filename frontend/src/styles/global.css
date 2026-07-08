@@ -6935,3 +6935,9 @@ a.secondary-button {
 .app-dialog-confirm.danger:hover {
   background: #dc2626 !important;
 }
+.materiel-owner-name {
+  margin: 6px 0 12px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
+}

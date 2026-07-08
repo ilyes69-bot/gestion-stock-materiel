@@ -4,8 +4,14 @@ import { addToPanier } from "../../utils/panier";
 import { useAuth } from "../../context/AuthContext";
 
 const MaterielCard = ({ materiel }) => {
+  const { user } = useAuth();
+
+  const isMyMaterial =
+    materiel.proprietaire_type === "UTILISATEUR" &&
+    materiel.owner_user_id === user?.id;
+
   const getStatutClass = () => {
-    if (materiel.statut === "DISPONIBLE") return "badge badge-sccess";
+    if (materiel.statut === "DISPONIBLE") return "badge badge-success";
     if (materiel.statut === "EMPRUNTE") return "badge badge-warning";
     return "badge badge-danger";
   };
@@ -13,6 +19,24 @@ const MaterielCard = ({ materiel }) => {
   const getEtatClass = () => {
     if (materiel.etat === "BON_ETAT") return "badge badge-success";
     return "badge badge-danger";
+  };
+
+  const getProprietaireText = () => {
+    if (materiel.proprietaire_nom) {
+      return `${materiel.proprietaire_label || "Proposé par"} : ${
+        materiel.proprietaire_nom
+      }`;
+    }
+
+    if (materiel.proprietaire_type === "SOCIETE") {
+      return `Société : ${materiel.societe?.nom || "Société"}`;
+    }
+
+    const ownerName = `${materiel.owner?.prenom || ""} ${
+      materiel.owner?.nom || ""
+    }`.trim();
+
+    return `Propriétaire : ${ownerName || "Utilisateur"}`;
   };
 
   const handleAddToPanier = () => {
@@ -29,29 +53,37 @@ const MaterielCard = ({ materiel }) => {
       toast.error(result.message);
     }
   };
-  const { user } = useAuth();
-  const isMyMaterial =
-  materiel.proprietaire_type === "UTILISATEUR" &&
-  materiel.owner_user_id === user?.id;
+  const getCleanDescription = () => {
+  if (!materiel.description) return "";
+
+  if (materiel.description.includes("[SEED TEST STOCKMANAGER]")) {
+    return "";
+  }
+
+  return materiel.description.trim();
+};
+
 
   return (
     <div className="catalogue-card">
       {materiel.image_url ? (
-      <img
-        className="materiel-image"
-        src={materiel.image_url}
-        alt={materiel.nom}
-      />
-    ) : (
-      <div className="materiel-image-placeholder">
-        Aucune photo
-      </div>
-    )}
+        <img
+          className="materiel-image"
+          src={materiel.image_url}
+          alt={materiel.nom}
+        />
+      ) : (
+        <div className="materiel-image-placeholder">Aucune photo</div>
+      )}
+
       <h3>{materiel.nom}</h3>
 
+      <p className="materiel-owner-name">{getProprietaireText()}</p>
+        {getCleanDescription() && (
       <p className="catalogue-description">
-        {materiel.description || "Aucune description disponible."}
+        {getCleanDescription()}
       </p>
+)}
 
       <div className="catalogue-info">
         <p>
@@ -70,13 +102,13 @@ const MaterielCard = ({ materiel }) => {
       </div>
 
       {materiel.proprietaire_type === "UTILISATEUR" ? (
-          <span className="owner-type-badge user-owner">
-            Matériel utilisateur
-          </span>
-        ) : (
-          <span className="owner-type-badge company-owner">
-            Matériel société
-          </span>
+        <span className="owner-type-badge user-owner">
+          Matériel utilisateur
+        </span>
+      ) : (
+        <span className="owner-type-badge company-owner">
+          Matériel société
+        </span>
       )}
 
       <div className="catalogue-actions">
@@ -84,6 +116,7 @@ const MaterielCard = ({ materiel }) => {
           Voir détail
         </Link>
       </div>
+
       {isMyMaterial ? (
         <div className="materiel-card-actions">
           <button type="button" className="secondary-button" disabled>

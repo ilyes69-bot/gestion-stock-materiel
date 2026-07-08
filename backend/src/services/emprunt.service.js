@@ -22,6 +22,48 @@ const getAdminSocieteId = async (adminId) => {
   return admin.societe_id;
 };
 
+const getSocieteAdminId = async (societeId) => {
+  if (!societeId) return null;
+
+  const { data: societe, error: societeError } = await supabase
+    .from("societes")
+    .select("admin_id")
+    .eq("id", societeId)
+    .maybeSingle();
+
+  if (!societeError && societe?.admin_id) {
+    return societe.admin_id;
+  }
+
+  const { data: admin, error: adminError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("role", "admin")
+    .eq("societe_id", societeId)
+    .limit(1)
+    .maybeSingle();
+
+  if (!adminError && admin?.id) {
+    return admin.id;
+  }
+
+  return null;
+};
+
+const createNotification = async ({ userId, contenu, type }) => {
+  if (!userId) return;
+
+  const { error } = await supabase.from("notifications").insert({
+    user_id: userId,
+    contenu,
+    type,
+  });
+
+  if (error) {
+    console.log("Erreur création notification:", error);
+  }
+};
+
 const verifierDates = (dateDebut, dateFin) => {
   if (!dateDebut || !dateFin) {
     const error = new Error("Les dates de début et de fin sont obligatoires");
@@ -150,15 +192,25 @@ const createEmprunt = async (clientId, data) => {
         : `Le client a demandé à emprunter le matériel société ${materiel.nom}.`,
   });
 
+  if (typeEmprunt === "SOCIETE" && materiel.societe_id) {
+    const adminSocieteId = await getSocieteAdminId(materiel.societe_id);
+
+    await createNotification({
+      userId: adminSocieteId,
+      contenu: `Nouvelle demande d'emprunt pour le matériel société "${materiel.nom}" du ${dateDebut} au ${dateFin}.`,
+      type: "DEMANDE_EMPRUNT_SOCIETE",
+    });
+  }
+
   if (typeEmprunt === "UTILISATEUR" && proprietaireUserId) {
-    await supabase.from("notifications").insert({
-      user_id: proprietaireUserId,
-      contenu: `Vous avez reçu une demande d'emprunt pour votre matériel "${materiel.nom}".`,
+    await createNotification({
+      userId: proprietaireUserId,
+      contenu: `Vous avez reçu une demande d'emprunt pour votre matériel "${materiel.nom}" du ${dateDebut} au ${dateFin}.`,
       type: "DEMANDE_MATERIEL_UTILISATEUR",
     });
   }
 
-  return emprunt;
+    return emprunt;
 };
 
 const getEmpruntsByClient = async (clientId) => {
