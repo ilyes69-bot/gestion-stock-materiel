@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getDashboardStats } from "../../services/dashboardService";
 import { getHistoriqueGlobal } from "../../services/historiqueService";
@@ -12,22 +12,33 @@ const DashboardAdmin = () => {
   const [error, setError] = useState("");
   const [retards, setRetards] = useState(0);
 
+  const hasLoadedDashboard = useRef(false);
+
   const loadDashboard = async () => {
     try {
-     const [statsData, historiqueData, empruntsData] = await Promise.all([
+      setLoading(true);
+      setError("");
+
+      const [statsData, historiqueData, empruntsData] = await Promise.all([
         getDashboardStats(),
         getHistoriqueGlobal(),
         getAllEmprunts(),
       ]);
 
-      const empruntsEnRetard = empruntsData.filter((emprunt) =>
+      const emprunts = Array.isArray(empruntsData) ? empruntsData : [];
+      const historiqueList = Array.isArray(historiqueData)
+        ? historiqueData
+        : [];
+
+      const empruntsEnRetard = emprunts.filter((emprunt) =>
         isEmpruntEnRetard(emprunt)
       ).length;
-     
-      setStats(statsData);
-      setHistorique(historiqueData.slice(0, 5));
+
+      setStats(statsData || {});
+      setHistorique(historiqueList.slice(0, 5));
       setRetards(empruntsEnRetard);
     } catch (err) {
+      console.log("Erreur dashboard admin:", err);
       setError("Erreur lors du chargement du dashboard");
     } finally {
       setLoading(false);
@@ -35,6 +46,9 @@ const DashboardAdmin = () => {
   };
 
   useEffect(() => {
+    if (hasLoadedDashboard.current) return;
+
+    hasLoadedDashboard.current = true;
     loadDashboard();
   }, []);
 
@@ -55,7 +69,11 @@ const DashboardAdmin = () => {
   const endommages = getValue("materielsEndommages", "endommages");
   const empruntsEnCours = getValue("empruntsEnCours", "emprunts_en_cours");
   const empruntsRetournes = getValue("empruntsRetournes", "emprunts_retournes");
-  const utilisateurs = getValue("totalUsers", "totalUtilisateurs", "utilisateurs");
+  const utilisateurs = getValue(
+    "totalUsers",
+    "totalUtilisateurs",
+    "utilisateurs"
+  );
 
   const kpis = [
     {

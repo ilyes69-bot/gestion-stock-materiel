@@ -76,7 +76,7 @@ const SuperAdminDashboard = () => {
   useEffect(() => {
     loadStats();
   }, []);
-
+  /*loading*/
   if (loading) {
     return <p>Chargement...</p>;
   }
