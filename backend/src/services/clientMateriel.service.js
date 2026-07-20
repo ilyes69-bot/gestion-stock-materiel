@@ -190,6 +190,8 @@ const getCataloguePublic = async () => {
         email
       )
     `)
+    .eq("statut", "DISPONIBLE")
+    .eq("etat", "BON_ETAT")
     .or(
       "proprietaire_type.eq.SOCIETE,and(proprietaire_type.eq.UTILISATEUR,statut_validation.eq.APPROUVE)"
     )
