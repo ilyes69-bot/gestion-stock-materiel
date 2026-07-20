@@ -1,5 +1,10 @@
 const supabase = require("../config/supabase");
 
+const statsCacheBySociete = new Map();
+const pendingStatsBySociete = new Map();
+
+const CACHE_DURATION = 30000; // 30 secondes
+
 const getAdminSocieteId = async (adminId) => {
   const { data: admin, error } = await supabase
     .from("users")
@@ -23,9 +28,10 @@ const getAdminSocieteId = async (adminId) => {
 };
 
 const countRows = async (table, filters = []) => {
-  let query = supabase
-    .from(table)
-    .select("*", { count: "exact", head: true });
+  let query = supabase.from(table).select("*", {
+    count: "exact",
+    head: true,
+  });
 
   filters.forEach((filter) => {
     query = query.eq(filter.column, filter.value);
@@ -34,7 +40,11 @@ const countRows = async (table, filters = []) => {
   const { count, error } = await query;
 
   if (error) {
-    throw new Error(error.message);
+    console.log(`Erreur count ${table}:`, error);
+
+    const err = new Error("Erreur lors du calcul des statistiques");
+    err.status = 500;
+    throw err;
   }
 
   return count || 0;
@@ -42,62 +52,101 @@ const countRows = async (table, filters = []) => {
 
 const getDashboardStats = async (adminId) => {
   const societeId = await getAdminSocieteId(adminId);
+  const now = Date.now();
 
-  const totalMateriels = await countRows("materiels", [
-    { column: "proprietaire_type", value: "SOCIETE" },
-    { column: "societe_id", value: societeId },
-  ]);
+  const cachedStats = statsCacheBySociete.get(societeId);
 
-  const materielsDisponibles = await countRows("materiels", [
-    { column: "proprietaire_type", value: "SOCIETE" },
-    { column: "societe_id", value: societeId },
-    { column: "statut", value: "DISPONIBLE" },
-  ]);
+  if (cachedStats && now - cachedStats.time < CACHE_DURATION) {
+    return cachedStats.data;
+  }
 
-  const materielsEmpruntes = await countRows("materiels", [
-    { column: "proprietaire_type", value: "SOCIETE" },
-    { column: "societe_id", value: societeId },
-    { column: "statut", value: "EMPRUNTE" },
-  ]);
+  const pendingRequest = pendingStatsBySociete.get(societeId);
 
-  const materielsIndisponibles = await countRows("materiels", [
-    { column: "proprietaire_type", value: "SOCIETE" },
-    { column: "societe_id", value: societeId },
-    { column: "statut", value: "INDISPONIBLE" },
-  ]);
+  if (pendingRequest) {
+    return pendingRequest;
+  }
 
-  const materielsEndommages = await countRows("materiels", [
-    { column: "proprietaire_type", value: "SOCIETE" },
-    { column: "societe_id", value: societeId },
-    { column: "etat", value: "ENDOMMAGE" },
-  ]);
+  const request = Promise.all([
+    countRows("materiels", [
+      { column: "proprietaire_type", value: "SOCIETE" },
+      { column: "societe_id", value: societeId },
+    ]),
 
-  const empruntsEnCours = await countRows("emprunts", [
-    { column: "type_emprunt", value: "SOCIETE" },
-    { column: "societe_id", value: societeId },
-    { column: "statut", value: "EN_COURS" },
-  ]);
+    countRows("materiels", [
+      { column: "proprietaire_type", value: "SOCIETE" },
+      { column: "societe_id", value: societeId },
+      { column: "statut", value: "DISPONIBLE" },
+    ]),
 
-  const empruntsRetournes = await countRows("emprunts", [
-    { column: "type_emprunt", value: "SOCIETE" },
-    { column: "societe_id", value: societeId },
-    { column: "statut", value: "RETOURNE" },
-  ]);
+    countRows("materiels", [
+      { column: "proprietaire_type", value: "SOCIETE" },
+      { column: "societe_id", value: societeId },
+      { column: "statut", value: "EMPRUNTE" },
+    ]),
 
-  const totalUtilisateurs = await countRows("users", [
-    { column: "societe_id", value: societeId },
-  ]);
+    countRows("materiels", [
+      { column: "proprietaire_type", value: "SOCIETE" },
+      { column: "societe_id", value: societeId },
+      { column: "statut", value: "INDISPONIBLE" },
+    ]),
 
-  return {
-    totalMateriels,
-    materielsDisponibles,
-    materielsEmpruntes,
-    materielsIndisponibles,
-    materielsEndommages,
-    empruntsEnCours,
-    empruntsRetournes,
-    totalUtilisateurs,
-  };
+    countRows("materiels", [
+      { column: "proprietaire_type", value: "SOCIETE" },
+      { column: "societe_id", value: societeId },
+      { column: "etat", value: "ENDOMMAGE" },
+    ]),
+
+    countRows("emprunts", [
+      { column: "type_emprunt", value: "SOCIETE" },
+      { column: "societe_id", value: societeId },
+      { column: "statut", value: "EN_COURS" },
+    ]),
+
+    countRows("emprunts", [
+      { column: "type_emprunt", value: "SOCIETE" },
+      { column: "societe_id", value: societeId },
+      { column: "statut", value: "RETOURNE" },
+    ]),
+
+    countRows("users", [{ column: "societe_id", value: societeId }]),
+  ])
+    .then(
+      ([
+        totalMateriels,
+        materielsDisponibles,
+        materielsEmpruntes,
+        materielsIndisponibles,
+        materielsEndommages,
+        empruntsEnCours,
+        empruntsRetournes,
+        totalUtilisateurs,
+      ]) => {
+        const stats = {
+          totalMateriels,
+          materielsDisponibles,
+          materielsEmpruntes,
+          materielsIndisponibles,
+          materielsEndommages,
+          empruntsEnCours,
+          empruntsRetournes,
+          totalUtilisateurs,
+        };
+
+        statsCacheBySociete.set(societeId, {
+          data: stats,
+          time: Date.now(),
+        });
+
+        return stats;
+      }
+    )
+    .finally(() => {
+      pendingStatsBySociete.delete(societeId);
+    });
+
+  pendingStatsBySociete.set(societeId, request);
+
+  return request;
 };
 
 module.exports = {

@@ -1,5 +1,10 @@
 const supabase = require("../config/supabase");
 
+let statsCache = null;
+let statsCacheTime = 0;
+
+const CACHE_DURATION = 30000; // 30 secondes
+
 const countRows = async (table, filters = []) => {
   let query = supabase.from(table).select("*", {
     count: "exact",
@@ -23,58 +28,68 @@ const countRows = async (table, filters = []) => {
 };
 
 const getSuperAdminStats = async () => {
-  const totalSocietes = await countRows("societes");
-  const societesEnAttente = await countRows("societes", [
-    { column: "statut", value: "EN_ATTENTE" },
-  ]);
-  const societesApprouvees = await countRows("societes", [
-    { column: "statut", value: "APPROUVE" },
-  ]);
-  const societesRefusees = await countRows("societes", [
-    { column: "statut", value: "REFUSE" },
+  const now = Date.now();
+
+  if (statsCache && now - statsCacheTime < CACHE_DURATION) {
+    return statsCache;
+  }
+
+  const [
+    totalSocietes,
+    societesEnAttente,
+    societesApprouvees,
+    societesRefusees,
+
+    totalUtilisateurs,
+    totalClients,
+    totalAdmins,
+    totalTravailleurs,
+
+    totalMateriels,
+    materielsSociete,
+    materielsUtilisateurs,
+    materielsUtilisateursEnAttente,
+
+    totalEmprunts,
+    empruntsEnAttente,
+    empruntsValides,
+    empruntsEnCours,
+    empruntsRetournes,
+    empruntsRefuses,
+  ] = await Promise.all([
+    countRows("societes"),
+    countRows("societes", [{ column: "statut", value: "EN_ATTENTE" }]),
+    countRows("societes", [{ column: "statut", value: "APPROUVE" }]),
+    countRows("societes", [{ column: "statut", value: "REFUSE" }]),
+
+    countRows("users"),
+    countRows("users", [{ column: "role", value: "client" }]),
+    countRows("users", [{ column: "role", value: "admin" }]),
+    countRows("users", [{ column: "role", value: "travailleur" }]),
+
+    countRows("materiels"),
+    countRows("materiels", [
+      { column: "proprietaire_type", value: "SOCIETE" },
+    ]),
+    countRows("materiels", [
+      { column: "proprietaire_type", value: "UTILISATEUR" },
+    ]),
+    countRows("materiels", [
+      { column: "proprietaire_type", value: "UTILISATEUR" },
+      { column: "statut_validation", value: "EN_ATTENTE" },
+    ]),
+
+    countRows("emprunts"),
+    countRows("emprunts", [
+      { column: "statut", value: "EN_ATTENTE_VALIDATION" },
+    ]),
+    countRows("emprunts", [{ column: "statut", value: "VALIDE" }]),
+    countRows("emprunts", [{ column: "statut", value: "EN_COURS" }]),
+    countRows("emprunts", [{ column: "statut", value: "RETOURNE" }]),
+    countRows("emprunts", [{ column: "statut", value: "REFUSE" }]),
   ]);
 
-  const totalUtilisateurs = await countRows("users");
-  const totalClients = await countRows("users", [
-    { column: "role", value: "client" },
-  ]);
-  const totalAdmins = await countRows("users", [
-    { column: "role", value: "admin" },
-  ]);
-  const totalTravailleurs = await countRows("users", [
-    { column: "role", value: "travailleur" },
-  ]);
-
-  const totalMateriels = await countRows("materiels");
-  const materielsSociete = await countRows("materiels", [
-    { column: "proprietaire_type", value: "SOCIETE" },
-  ]);
-  const materielsUtilisateurs = await countRows("materiels", [
-    { column: "proprietaire_type", value: "UTILISATEUR" },
-  ]);
-  const materielsUtilisateursEnAttente = await countRows("materiels", [
-    { column: "proprietaire_type", value: "UTILISATEUR" },
-    { column: "statut_validation", value: "EN_ATTENTE" },
-  ]);
-
-  const totalEmprunts = await countRows("emprunts");
-  const empruntsEnAttente = await countRows("emprunts", [
-    { column: "statut", value: "EN_ATTENTE_VALIDATION" },
-  ]);
-  const empruntsValides = await countRows("emprunts", [
-    { column: "statut", value: "VALIDE" },
-  ]);
-  const empruntsEnCours = await countRows("emprunts", [
-    { column: "statut", value: "EN_COURS" },
-  ]);
-  const empruntsRetournes = await countRows("emprunts", [
-    { column: "statut", value: "RETOURNE" },
-  ]);
-  const empruntsRefuses = await countRows("emprunts", [
-    { column: "statut", value: "REFUSE" },
-  ]);
-
-  return {
+  const stats = {
     totalSocietes,
     societesEnAttente,
     societesApprouvees,
@@ -123,8 +138,13 @@ const getSuperAdminStats = async () => {
       { label: "Refusés", value: empruntsRefuses },
     ],
   };
+
+  statsCache = stats;
+  statsCacheTime = Date.now();
+
+  return stats;
 };
 
 module.exports = {
   getSuperAdminStats,
-};  
+};
