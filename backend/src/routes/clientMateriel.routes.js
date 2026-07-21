@@ -8,6 +8,8 @@ const {
   approve,
   refuse,
   getCatalogue,
+  updateMine,
+  deleteMine,
 } = require("../controllers/clientMateriel.controller");
 
 const authMiddleware = require("../middlewares/auth.middleware");
@@ -22,12 +24,17 @@ router.post(
   create
 );
 
-router.get(
-  "/me",
+router.get("/me", authMiddleware, roleMiddleware("client"), getMine);
+
+router.put(
+  "/:id",
   authMiddleware,
   roleMiddleware("client"),
-  getMine
+  upload.single("image"),
+  updateMine
 );
+
+router.delete("/:id", authMiddleware, roleMiddleware("client"), deleteMine);
 
 router.get(
   "/super-admin/pending",
@@ -36,12 +43,7 @@ router.get(
   getPending
 );
 
-router.get(
-  "/catalogue",
-  authMiddleware,
-  roleMiddleware("client"),
-  getCatalogue
-);
+router.get("/catalogue", authMiddleware, roleMiddleware("client"), getCatalogue);
 
 router.put(
   "/super-admin/:id/approve",

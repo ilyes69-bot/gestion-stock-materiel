@@ -255,6 +255,173 @@ const getCataloguePublic = async () => {
     };
   });
 };
+const getActiveEmpruntsByMateriel = async (materielId) => {
+  const activeStatuses = [
+    "EN_ATTENTE_VALIDATION",
+    "EN_ATTENTE_PROPRIETAIRE",
+    "VALIDE",
+    "EN_COURS",
+    "EN_ATTENTE_CONFIRMATION_RETOUR",
+  ];
+
+  const { data, error } = await supabase
+    .from("emprunts")
+    .select("id, statut")
+    .eq("materiel_id", materielId)
+    .in("statut", activeStatuses);
+
+  if (error) {
+    console.log("Erreur vérification emprunts actifs:", error);
+    const err = new Error("Erreur lors de la vérification des emprunts");
+    err.status = 500;
+    throw err;
+  }
+
+  return data || [];
+};
+
+const updateClientMateriel = async (clientId, materielId, data) => {
+  const { data: existingMateriel, error: existingError } = await supabase
+    .from("materiels")
+    .select("*")
+    .eq("id", materielId)
+    .eq("owner_user_id", clientId)
+    .eq("proprietaire_type", "UTILISATEUR")
+    .single();
+
+  if (existingError || !existingMateriel) {
+    const error = new Error("Matériel introuvable ou non autorisé");
+    error.status = 404;
+    throw error;
+  }
+
+  const activeEmprunts = await getActiveEmpruntsByMateriel(materielId);
+
+  if (activeEmprunts.length > 0) {
+    const error = new Error(
+      "Impossible de modifier ce matériel car il est lié à un emprunt actif."
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  const updateData = {
+    updated_at: new Date().toISOString(),
+    statut_validation: "EN_ATTENTE",
+    commentaire_validation: null,
+  };
+
+  if (data.nom !== undefined) {
+    if (!data.nom || data.nom.trim() === "") {
+      const error = new Error("Le nom du matériel est obligatoire");
+      error.status = 400;
+      throw error;
+    }
+
+    updateData.nom = data.nom.trim();
+  }
+
+  if (data.description !== undefined) {
+    updateData.description = data.description || "";
+  }
+
+  if (data.categorie !== undefined) {
+    if (!data.categorie || data.categorie.trim() === "") {
+      const error = new Error("La catégorie est obligatoire");
+      error.status = 400;
+      throw error;
+    }
+
+    updateData.categorie = data.categorie.trim();
+  }
+
+  if (data.prix_jour !== undefined) {
+    updateData.prix_jour =
+      data.prix_jour === "" || data.prix_jour === null
+        ? null
+        : Number(data.prix_jour);
+  }
+
+  if (data.ville !== undefined) {
+    updateData.ville = data.ville || null;
+  }
+
+  if (data.image_url !== undefined) {
+    updateData.image_url = data.image_url;
+  }
+
+  const { data: updatedMateriel, error } = await supabase
+    .from("materiels")
+    .update(updateData)
+    .eq("id", materielId)
+    .eq("owner_user_id", clientId)
+    .eq("proprietaire_type", "UTILISATEUR")
+    .select()
+    .single();
+
+  if (error) {
+    console.log("Erreur updateClientMateriel:", error);
+    const err = new Error("Erreur lors de la modification du matériel");
+    err.status = 500;
+    throw err;
+  }
+
+  await supabase.from("historique_actions").insert({
+    user_id: clientId,
+    materiel_id: materielId,
+    type_action: "MODIFICATION_MATERIEL_CLIENT",
+    description: `Le client a modifié son matériel ${updatedMateriel.nom}. Le matériel est de nouveau en attente de validation.`,
+  });
+
+  return updatedMateriel;
+};
+
+const deleteClientMateriel = async (clientId, materielId) => {
+  const { data: materiel, error: materielError } = await supabase
+    .from("materiels")
+    .select("*")
+    .eq("id", materielId)
+    .eq("owner_user_id", clientId)
+    .eq("proprietaire_type", "UTILISATEUR")
+    .single();
+
+  if (materielError || !materiel) {
+    const error = new Error("Matériel introuvable ou non autorisé");
+    error.status = 404;
+    throw error;
+  }
+
+  const activeEmprunts = await getActiveEmpruntsByMateriel(materielId);
+
+  if (activeEmprunts.length > 0) {
+    const error = new Error(
+      "Impossible de supprimer ce matériel car il est lié à un emprunt actif."
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  await supabase
+    .from("historique_actions")
+    .delete()
+    .eq("materiel_id", materielId);
+
+  const { error } = await supabase
+    .from("materiels")
+    .delete()
+    .eq("id", materielId)
+    .eq("owner_user_id", clientId)
+    .eq("proprietaire_type", "UTILISATEUR");
+
+  if (error) {
+    console.log("Erreur deleteClientMateriel:", error);
+    const err = new Error("Erreur lors de la suppression du matériel");
+    err.status = 500;
+    throw err;
+  }
+
+  return true;
+};
 
 module.exports = {
   createClientMateriel,
@@ -263,4 +430,6 @@ module.exports = {
   approuverMaterielClient,
   refuserMaterielClient,
   getCataloguePublic,
+  updateClientMateriel,
+  deleteClientMateriel,
 };

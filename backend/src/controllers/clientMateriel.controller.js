@@ -7,6 +7,8 @@ const {
   approuverMaterielClient,
   refuserMaterielClient,
   getCataloguePublic,
+  updateClientMateriel,
+  deleteClientMateriel, 
 } = require("../services/clientMateriel.service");
 
 const create = async (req, res) => {
@@ -132,7 +134,66 @@ const getCatalogue = async (req, res) => {
     });
   }
 };
+const updateMine = async (req, res) => {
+  try {
+    let imageUrl;
 
+    if (req.file) {
+      const fileExt = req.file.originalname.split(".").pop();
+      const fileName = `client-materiels/${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("materiels")
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+        });
+
+      if (uploadError) {
+        console.log("Erreur upload image:", uploadError);
+        return res.status(500).json({
+          message: "Erreur lors de l’upload de l’image",
+        });
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("materiels")
+        .getPublicUrl(fileName);
+
+      imageUrl = publicUrlData.publicUrl;
+    }
+
+    const materiel = await updateClientMateriel(req.user.id, req.params.id, {
+      ...req.body,
+      ...(imageUrl ? { image_url: imageUrl } : {}),
+    });
+
+    res.status(200).json({
+      message:
+        "Matériel modifié avec succès. Il est de nouveau en attente de validation.",
+      materiel,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
+    });
+  }
+};
+
+const deleteMine = async (req, res) => {
+  try {
+    await deleteClientMateriel(req.user.id, req.params.id);
+
+    res.status(200).json({
+      message: "Matériel supprimé avec succès.",
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Erreur serveur",
+    });
+  }
+};
 module.exports = {
   create,
   getMine,
@@ -140,4 +201,6 @@ module.exports = {
   approve,
   refuse,
   getCatalogue,
+  updateMine,
+  deleteMine,
 };

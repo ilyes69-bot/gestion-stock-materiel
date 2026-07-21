@@ -37,3 +37,18 @@ export const getCatalogueMateriels = async () => {
   const response = await api.get("/client-materiels/catalogue");
   return response.data.materiels || [];
 };
+
+export const updateClientMaterielClient = async (id, data) => {
+  const response = await api.put(`/client-materiels/${id}`, data, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data.materiel;
+};
+
+export const deleteClientMaterielClient = async (id) => {
+  const response = await api.delete(`/client-materiels/${id}`);
+  return response.data;
+};
